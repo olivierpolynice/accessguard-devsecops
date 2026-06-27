@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Variables sensibles
+.env
+.env.*
+!.env.example
+
+# Tests et couverture
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Logs
+*.log
+logs/
+
+# IDE / système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker / données locales
+postgres_data/
+grafana_data/
+prometheus_data/
+
+# Rapports générés
+reports/
+*.sarif

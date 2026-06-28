@@ -179,3 +179,29 @@ Les prochaines étapes prévues sont :
 ## Statut du projet
 
 Le socle fonctionnel de gestion des accès est opérationnel en environnement local. Le projet est en phase de consolidation avant intégration progressive des composants DevSecOps, sécurité et infrastructure.
+## Statut du socle P0
+
+Le socle fonctionnel P0 d’AccessGuard est terminé et validé en environnement local.
+
+Fonctionnalités réalisées :
+
+- endpoint `GET /health` avec état, version et date de contrôle ;
+- catalogue de 5 ressources internes chargées depuis `seed.py` ;
+- création, liste et consultation détaillée des demandes d’accès ;
+- workflow métier avec les statuts :
+  `PENDING_MANAGER`, `APPROVED`, `REFUSED`, `GRANTED`, `REVOKED` ;
+- attribution et révocation d’un accès simulé ;
+- journal d’audit des actions métier ;
+- contrôles d’erreurs :
+  - dates incohérentes : `422` ;
+  - statut manager invalide : `422` ;
+  - demande inexistante : `404` ;
+  - ressource inexistante : `404` ;
+  - attribution avant approbation : `409` ;
+  - double grant actif : `409` ;
+- tests automatisés pytest couvrant le socle P0.
+
+Résultat de validation attendu :
+
+```text
+13 passed

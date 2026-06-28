@@ -267,3 +267,18 @@ def test_duplicate_active_grant_409() -> None:
     assert second_grant.json()["detail"] == (
         "Un accès actif existe déjà pour cette demande."
     )
+def test_invalid_manager_status_422() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+
+    response = client.post(
+        f"/access-requests/{request_id}/manager-decision",
+        json={
+            "manager_email": "manager@asteriatech.local",
+            "decision": "INVALID",
+            "comment": "Test d'un statut manager non autorisé.",
+        },
+    )
+
+    assert response.status_code == 422

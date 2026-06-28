@@ -236,3 +236,34 @@ def test_resource_not_found_404() -> None:
     assert response.json()["detail"] == (
         "La ressource demandée est introuvable ou inactive."
     )
+
+
+def test_duplicate_active_grant_409() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+    approve_request(request_id)
+
+    first_grant = client.post(
+        f"/access-requests/{request_id}/grant",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "comment": "Première attribution pour vérifier le doublon.",
+        },
+    )
+
+    assert first_grant.status_code == 201
+    assert first_grant.json()["status"] == "ACTIVE"
+
+    second_grant = client.post(
+        f"/access-requests/{request_id}/grant",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "comment": "Tentative de seconde attribution.",
+        },
+    )
+
+    assert second_grant.status_code == 409
+    assert second_grant.json()["detail"] == (
+        "Un accès actif existe déjà pour cette demande."
+    )

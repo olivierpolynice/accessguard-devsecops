@@ -169,6 +169,7 @@ def list_access_requests() -> list[AccessRequest]:
     """Retourne les demandes d'accès créées dans l'environnement local."""
     return ACCESS_REQUESTS
 
+
 @app.get(
     "/access-requests/{request_id}",
     response_model=AccessRequest,
@@ -226,15 +227,6 @@ def grant_access(
     """Attribue un accès après approbation de la demande."""
     access_request = get_access_request_or_404(request_id)
 
-    if access_request.status != "APPROVED":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "L'accès ne peut être attribué que pour une demande "
-                "approuvée."
-            ),
-        )
-
     existing_grant = next(
         (
             grant
@@ -248,6 +240,15 @@ def grant_access(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Un accès actif existe déjà pour cette demande.",
+        )
+
+    if access_request.status != "APPROVED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "L'accès ne peut être attribué que pour une demande "
+                "approuvée."
+            ),
         )
 
     access_grant = AccessGrant(

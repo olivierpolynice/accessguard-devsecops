@@ -58,6 +58,8 @@ def test_health_check() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.json()["service"] == "AccessGuard"
+    assert response.json()["version"] == "0.1.0"
+    assert "checked_at" in response.json()
 
 
 def test_list_resources() -> None:
@@ -68,6 +70,7 @@ def test_list_resources() -> None:
 
     assert len(resources) == 5
     assert resources[0]["name"] == "VPN Entreprise"
+    assert resources[3]["sensitivity"] == "CRITICAL"
 
 
 def test_create_access_request() -> None:
@@ -79,6 +82,30 @@ def test_create_access_request() -> None:
     assert ACCESS_REQUESTS[0].status == "PENDING_MANAGER"
     assert len(AUDIT_LOGS) == 1
     assert AUDIT_LOGS[0].action == "ACCESS_REQUEST_CREATED"
+
+
+def test_list_access_requests() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+    response = client.get("/access-requests")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["id"] == request_id
+    assert response.json()[0]["status"] == "PENDING_MANAGER"
+
+
+def test_get_access_request_detail() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+    response = client.get(f"/access-requests/{request_id}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == request_id
+    assert response.json()["resource_name"] == "VPN Entreprise"
+    assert response.json()["status"] == "PENDING_MANAGER"
 
 
 def test_reject_invalid_dates() -> None:
@@ -168,4 +195,44 @@ def test_grant_before_approval_409() -> None:
     assert response.status_code == 409
     assert response.json()["detail"] == (
         "L'accès ne peut être attribué que pour une demande approuvée."
+    )
+
+
+def test_manager_refusal() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+
+    response = client.post(
+        f"/access-requests/{request_id}/manager-decision",
+        json={
+            "manager_email": "manager@asteriatech.local",
+            "decision": "REFUSED",
+            "comment": "Accès non justifié pour le périmètre demandé.",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "REFUSED"
+    assert AUDIT_LOGS[-1].action == "MANAGER_DECISION"
+    assert AUDIT_LOGS[-1].outcome.startswith("REFUSED:")
+
+
+def test_resource_not_found_404() -> None:
+    reset_data()
+
+    response = client.post(
+        "/access-requests",
+        json={
+            "requester_email": "test.user@asteriatech.local",
+            "resource_id": 999,
+            "reason": "Test de contrôle d'une ressource inexistante.",
+            "start_date": "2026-07-01",
+            "end_date": "2026-07-31",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == (
+        "La ressource demandée est introuvable ou inactive."
     )

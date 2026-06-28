@@ -98,6 +98,7 @@ def health_check() -> dict[str, str]:
         "status": "ok",
         "service": "AccessGuard",
         "version": "0.1.0",
+        "checked_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -167,6 +168,15 @@ def create_access_request(payload: AccessRequestCreate) -> AccessRequest:
 def list_access_requests() -> list[AccessRequest]:
     """Retourne les demandes d'accès créées dans l'environnement local."""
     return ACCESS_REQUESTS
+
+@app.get(
+    "/access-requests/{request_id}",
+    response_model=AccessRequest,
+    tags=["Access Requests"],
+)
+def get_access_request(request_id: int) -> AccessRequest:
+    """Retourne le détail d'une demande d'accès à partir de son identifiant."""
+    return get_access_request_or_404(request_id)
 
 
 @app.post(

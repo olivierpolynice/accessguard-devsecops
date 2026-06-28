@@ -134,3 +134,38 @@ def test_complete_access_workflow() -> None:
     assert "MANAGER_DECISION" in audit_actions
     assert "ACCESS_GRANTED" in audit_actions
     assert "ACCESS_REVOKED" in audit_actions
+
+
+def test_request_not_found_404() -> None:
+    reset_data()
+
+    response = client.post(
+        "/access-requests/999/manager-decision",
+        json={
+            "manager_email": "manager@asteriatech.local",
+            "decision": "APPROVED",
+            "comment": "Test d'une demande inexistante.",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "La demande d'accès est introuvable."
+
+
+def test_grant_before_approval_409() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+
+    response = client.post(
+        f"/access-requests/{request_id}/grant",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "comment": "Tentative d'attribution avant approbation.",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == (
+        "L'accès ne peut être attribué que pour une demande approuvée."
+    )

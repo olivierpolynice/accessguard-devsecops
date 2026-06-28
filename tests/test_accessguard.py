@@ -1,0 +1,136 @@
+from pathlib import Path
+import sys
+
+from fastapi.testclient import TestClient
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+APP_DIRECTORY = PROJECT_ROOT / "app"
+
+sys.path.insert(0, str(APP_DIRECTORY))
+
+from main import ACCESS_GRANTS, ACCESS_REQUESTS, AUDIT_LOGS, app  # noqa: E402
+
+
+client = TestClient(app)
+
+
+def reset_data() -> None:
+    """Réinitialise les données locales entre les tests."""
+    ACCESS_REQUESTS.clear()
+    ACCESS_GRANTS.clear()
+    AUDIT_LOGS.clear()
+
+
+def create_valid_request() -> int:
+    """Crée une demande valide et retourne son identifiant."""
+    response = client.post(
+        "/access-requests",
+        json={
+            "requester_email": "test.user@asteriatech.local",
+            "resource_id": 1,
+            "reason": "Accès VPN requis pour réaliser des tests automatisés.",
+            "start_date": "2026-07-01",
+            "end_date": "2026-07-31",
+        },
+    )
+
+    assert response.status_code == 201
+    return response.json()["id"]
+
+
+def approve_request(request_id: int) -> None:
+    """Approuve une demande au nom d'un manager."""
+    response = client.post(
+        f"/access-requests/{request_id}/manager-decision",
+        json={
+            "manager_email": "manager@asteriatech.local",
+            "decision": "APPROVED",
+            "comment": "Validation du besoin métier pour les tests.",
+        },
+    )
+
+    assert response.status_code == 200
+
+
+def test_health_check() -> None:
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert response.json()["service"] == "AccessGuard"
+
+
+def test_list_resources() -> None:
+    response = client.get("/resources")
+
+    assert response.status_code == 200
+    resources = response.json()
+
+    assert len(resources) == 5
+    assert resources[0]["name"] == "VPN Entreprise"
+
+
+def test_create_access_request() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+
+    assert request_id == 1
+    assert ACCESS_REQUESTS[0].status == "PENDING_MANAGER"
+    assert len(AUDIT_LOGS) == 1
+    assert AUDIT_LOGS[0].action == "ACCESS_REQUEST_CREATED"
+
+
+def test_reject_invalid_dates() -> None:
+    reset_data()
+
+    response = client.post(
+        "/access-requests",
+        json={
+            "requester_email": "test.user@asteriatech.local",
+            "resource_id": 1,
+            "reason": "Test de validation des dates incohérentes.",
+            "start_date": "2026-07-31",
+            "end_date": "2026-07-01",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_complete_access_workflow() -> None:
+    reset_data()
+
+    request_id = create_valid_request()
+    approve_request(request_id)
+
+    grant_response = client.post(
+        f"/access-requests/{request_id}/grant",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "comment": "Accès attribué après approbation du manager.",
+        },
+    )
+
+    assert grant_response.status_code == 201
+    assert grant_response.json()["status"] == "ACTIVE"
+
+    grant_id = grant_response.json()["id"]
+
+    revoke_response = client.post(
+        f"/access-grants/{grant_id}/revoke",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "reason": "Fin de la période de test.",
+        },
+    )
+
+    assert revoke_response.status_code == 200
+    assert revoke_response.json()["status"] == "REVOKED"
+
+    audit_actions = [audit.action for audit in AUDIT_LOGS]
+
+    assert "ACCESS_REQUEST_CREATED" in audit_actions
+    assert "MANAGER_DECISION" in audit_actions
+    assert "ACCESS_GRANTED" in audit_actions
+    assert "ACCESS_REVOKED" in audit_actions

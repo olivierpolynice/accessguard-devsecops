@@ -1,0 +1,57 @@
+@startuml AccessGuard_Cas_Utilisation
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Employé" as employee
+actor "Manager" as manager
+actor "Administrateur IT" as itadmin
+actor "Administrateur sécurité" as secadmin
+
+rectangle "AccessGuard" {
+
+  usecase "S'authentifier" as UC_Login
+  usecase "Consulter le catalogue\ndes ressources" as UC_Catalog
+  usecase "Créer une demande\nd'accès" as UC_Request
+  usecase "Consulter le statut\nde ses demandes" as UC_Status
+  usecase "Consulter ses accès\nactifs" as UC_Access
+
+  usecase "Consulter les demandes\nde son équipe" as UC_TeamRequests
+  usecase "Valider une demande" as UC_Approve
+  usecase "Refuser une demande" as UC_Reject
+
+  usecase "Attribuer un accès" as UC_Grant
+  usecase "Révoquer un accès" as UC_Revoke
+  usecase "Gérer les ressources" as UC_Resources
+  usecase "Consulter les accès actifs" as UC_AllAccess
+
+  usecase "Gérer les utilisateurs" as UC_Users
+  usecase "Gérer les rôles\net permissions" as UC_Roles
+  usecase "Consulter le journal\nd'audit" as UC_Audit
+  usecase "Consulter les alertes\nsensibles" as UC_Alerts
+}
+
+employee --> UC_Login
+employee --> UC_Catalog
+employee --> UC_Request
+employee --> UC_Status
+employee --> UC_Access
+
+manager --> UC_Login
+manager --> UC_TeamRequests
+manager --> UC_Approve
+manager --> UC_Reject
+
+itadmin --> UC_Login
+itadmin --> UC_Grant
+itadmin --> UC_Revoke
+itadmin --> UC_Resources
+itadmin --> UC_AllAccess
+
+secadmin --> UC_Login
+secadmin --> UC_Users
+secadmin --> UC_Roles
+secadmin --> UC_Audit
+secadmin --> UC_Alerts
+
+@enduml

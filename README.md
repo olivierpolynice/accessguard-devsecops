@@ -1,64 +1,181 @@
-# AccessGuard DevSecOps
+# AccessGuard — Plateforme DevSecOps de gouvernance des accès
 
 ## Présentation
 
-AccessGuard est une plateforme DevSecOps sécurisée de gestion et de gouvernance des accès internes, conçue pour l’entreprise fictive **AsteriaTech**.
+AccessGuard est une application pédagogique développée pour l’entreprise fictive **AsteriaTech**.
 
-Le projet répond à un besoin de centralisation des demandes d’accès aux ressources internes de l’entreprise. Il permet de soumettre, valider, attribuer, révoquer et tracer les accès accordés aux collaborateurs.
+Le projet répond à un besoin de gouvernance des accès internes : permettre à un employé de demander un accès à une ressource, faire valider cette demande par un manager, attribuer l’accès par un administrateur IT, puis le révoquer lorsque cela est nécessaire.
 
-## Objectifs
+L’objectif est de construire progressivement une plateforme intégrant les dimensions :
 
-* Centraliser les demandes d’accès aux ressources internes.
-* Mettre en place une gestion des rôles et des permissions.
-* Appliquer le principe du moindre privilège.
-* Assurer la traçabilité des actions sensibles grâce à un journal d’audit.
-* Déployer l’application dans un environnement conteneurisé et sécurisé.
-* Automatiser les contrôles de qualité et de sécurité.
-* Superviser la disponibilité et l’état des services.
+* développement d’API ;
+* cybersécurité ;
+* traçabilité et audit ;
+* gestion des accès ;
+* tests automatisés ;
+* DevSecOps ;
+* infrastructure, réseau et supervision.
 
-## Fonctionnalités prévues
+## Fonctionnalités actuellement disponibles
 
-* Authentification sécurisée des utilisateurs.
-* Gestion des rôles : employé, manager, administrateur IT et administrateur sécurité.
-* Catalogue des ressources internes.
-* Création et suivi des demandes d’accès.
-* Validation ou refus des demandes.
-* Attribution, révocation et expiration des accès.
-* Journalisation des actions sensibles.
-* Tableau de bord de supervision.
+* Vérification de disponibilité de l’API avec `GET /health`
+* Consultation du catalogue de ressources avec `GET /resources`
+* Création d’une demande d’accès avec `POST /access-requests`
+* Validation ou refus d’une demande par un manager
+* Attribution d’un accès par un administrateur IT
+* Révocation d’un accès attribué
+* Journalisation des actions sensibles dans un journal d’audit
+* Tests automatisés avec pytest
 
-## Technologies prévues
+## Workflow métier
 
-* Python / FastAPI
-* PostgreSQL
-* Docker et Docker Compose
-* Nginx
-* Git et GitHub
-* Jenkins
-* SonarQube
-* Trivy
-* Prometheus
-* Grafana
-* pfSense et VLAN
+```text
+Employé
+  ↓
+Création d’une demande d’accès
+  ↓
+Validation ou refus par le manager
+  ↓
+Attribution de l’accès par l’administrateur IT
+  ↓
+Accès actif
+  ↓
+Révocation éventuelle
+  ↓
+Journalisation de chaque action sensible
+```
 
-## Structure du projet
+## Ressources internes simulées
+
+L’environnement AsteriaTech contient actuellement les ressources suivantes :
+
+* VPN Entreprise
+* Serveur de fichiers Finance
+* Environnement de développement
+* Portail d’administration
+* Plateforme Grafana
+
+Chaque ressource possède un niveau de sensibilité afin de représenter un contexte d’entreprise réaliste.
+
+## Architecture actuelle du projet
 
 ```text
 accessguard-devsecops/
-├── app/                  # Code de l'application
-├── docs/                 # Documentation, diagrammes et rapports
-├── infrastructure/       # Docker, Nginx, réseau et pfSense
-├── monitoring/           # Prometheus, Grafana et métriques
-├── security/             # Politique, scans et éléments de sécurité
-├── tests/                # Tests automatisés
-├── README.md
-└── .gitignore
+├── app/
+│   ├── main.py
+│   ├── schemas.py
+│   ├── database.py
+│   ├── models.py
+│   ├── seed.py
+│   └── requirements.txt
+├── docs/
+│   ├── diagrammes/
+│   ├── rapports/
+│   └── screenshots/
+├── infrastructure/
+├── monitoring/
+├── security/
+└── tests/
+    └── test_accessguard.py
 ```
 
-## État du projet
+## Technologies utilisées
 
-Phase actuelle : conception du projet et préparation du rendu n°02.
+* Python
+* FastAPI
+* Uvicorn
+* Pydantic
+* pytest
+* httpx
+* Swagger / OpenAPI
+* Git et GitHub
+* Visual Studio Code
 
-## Avertissement
+## Installation locale
 
-Ce projet est réalisé dans un cadre pédagogique. AsteriaTech est une entreprise fictive. Aucune donnée réelle ni aucun accès réel à des systèmes d’entreprise ne sont utilisés.
+Depuis le dossier `app` :
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+## Lancer l’application
+
+Depuis le dossier `app` :
+
+```powershell
+uvicorn main:app --reload
+```
+
+L’API est ensuite disponible à cette adresse :
+
+```text
+http://127.0.0.1:8000
+```
+
+La documentation Swagger est disponible ici :
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## Lancer les tests
+
+Depuis la racine du projet :
+
+```powershell
+python -m pytest -v
+```
+
+Résultat actuel attendu :
+
+```text
+5 passed
+```
+
+Les tests vérifient notamment :
+
+* la disponibilité de l’API ;
+* le catalogue de ressources ;
+* la création d’une demande ;
+* le rejet de dates incohérentes ;
+* le workflow complet : demande, approbation, attribution et révocation.
+
+## Captures de démonstration
+
+Les captures utilisées pour le rendu n°06 sont disponibles dans :
+
+```text
+docs/screenshots/rendu-06/
+```
+
+Elles couvrent :
+
+* le health check ;
+* les ressources ;
+* la création de demande ;
+* le contrôle des dates ;
+* la validation manager ;
+* le journal d’audit ;
+* l’attribution d’accès ;
+* la révocation ;
+* les tests pytest.
+
+## Évolutions prévues
+
+Les prochaines étapes prévues sont :
+
+* persistance des données avec SQLite puis PostgreSQL ;
+* authentification JWT ;
+* gestion des rôles et permissions ;
+* conteneurisation Docker ;
+* contrôles de sécurité DevSecOps ;
+* intégration de l’architecture réseau et de la segmentation VLAN ;
+* supervision avec Prometheus et Grafana ;
+* pipeline CI/CD.
+
+## Statut du projet
+
+Le socle fonctionnel de gestion des accès est opérationnel en environnement local. Le projet est en phase de consolidation avant intégration progressive des composants DevSecOps, sécurité et infrastructure.

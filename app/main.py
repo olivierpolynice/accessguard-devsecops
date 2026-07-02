@@ -2,7 +2,9 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, status
 
-from schemas import (
+from app.auth import router as auth_router
+
+from app.schemas import (
     AccessGrant,
     AccessGrantCreate,
     AccessGrantRevoke,
@@ -12,7 +14,7 @@ from schemas import (
     ManagerDecisionCreate,
     Resource,
 )
-from seed import get_seed_resources
+from app.seed import get_seed_resources
 
 app = FastAPI(
     title="AccessGuard API",
@@ -23,6 +25,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.include_router(auth_router)
 RESOURCES = get_seed_resources()
 
 ACCESS_REQUESTS: list[AccessRequest] = []

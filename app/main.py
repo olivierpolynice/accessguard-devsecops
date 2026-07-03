@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, status
 
+from auth import authenticate_user, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from schemas import (
     AccessGrant,
     AccessGrantCreate,
@@ -9,8 +10,10 @@ from schemas import (
     AccessRequest,
     AccessRequestCreate,
     AuditLog,
+    LoginRequest,
     ManagerDecisionCreate,
     Resource,
+    TokenResponse,
 )
 from seed import get_seed_resources
 
@@ -100,6 +103,44 @@ def health_check() -> dict[str, str]:
         "version": "0.1.0",
         "checked_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@app.post(
+    "/auth/login",
+    response_model=TokenResponse,
+    tags=["Authentication"],
+)
+def login(payload: LoginRequest) -> TokenResponse:
+    """Authentifie un utilisateur de démonstration et retourne un JWT.
+
+    Le jeton contient l'email (sub) et le rôle de l'utilisateur. Il ne
+    protège pas encore les routes métier existantes : cette route pose
+    uniquement le socle d'authentification de la V1.
+    """
+    user = authenticate_user(payload.email, payload.password)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email ou mot de passe incorrect.",
+        )
+
+    token = create_access_token(email=user["email"], role=user["role"])
+
+    create_audit_log(
+        actor_email=user["email"],
+        action="LOGIN_SUCCESS",
+        entity_type="user",
+        entity_id=0,
+        outcome=f"role={user['role']}",
+    )
+
+    return TokenResponse(
+        access_token=token,
+        email=user["email"],
+        role=user["role"],
+        expires_in_minutes=ACCESS_TOKEN_EXPIRE_MINUTES,
+    )
 
 
 @app.get(

@@ -205,3 +205,28 @@ Résultat de validation attendu :
 
 ```text
 13 passed
+
+## Intégration continue — GitHub Actions
+
+Un workflow GitHub Actions a été ajouté afin d’automatiser l’exécution des tests du projet.
+
+### Déclenchement
+
+Le workflow se lance automatiquement :
+
+- à chaque push sur `main` ou sur une branche `feature/**` ;
+- à chaque Pull Request vers `main`.
+
+### Étapes exécutées
+
+Le pipeline réalise les actions suivantes :
+
+1. récupération du code source ;
+2. installation de Python 3.12 ;
+3. installation des dépendances depuis `app/requirements.txt` ;
+4. exécution des tests avec pytest.
+
+### Commande exécutée
+
+```bash
+python -m pytest -v

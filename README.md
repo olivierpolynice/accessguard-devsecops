@@ -230,3 +230,10 @@ Le pipeline réalise les actions suivantes :
 
 ```bash
 python -m pytest -v
+
+### Lancement local de l’application
+
+Depuis la racine du projet :
+
+```bash
+python -m uvicorn app.main:app --reload

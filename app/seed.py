@@ -1,4 +1,4 @@
-from schemas import Resource
+from app.schemas import Resource
 
 
 def get_seed_resources() -> list[Resource]:

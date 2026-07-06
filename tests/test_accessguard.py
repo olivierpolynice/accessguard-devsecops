@@ -282,3 +282,101 @@ def test_invalid_manager_status_422() -> None:
     )
 
     assert response.status_code == 422
+
+def test_create_access_request_reason_too_short_422() -> None:
+    """Un motif de moins de 10 caractères doit être rejeté."""
+    reset_data()
+
+    response = client.post(
+        "/access-requests",
+        json={
+            "requester_email": "test.user@asteriatech.local",
+            "resource_id": 1,
+            "reason": "Court",
+            "start_date": "2026-07-01",
+            "end_date": "2026-07-31",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_access_request_invalid_resource_id_422() -> None:
+    """Un resource_id négatif ou nul doit être rejeté."""
+    reset_data()
+
+    response = client.post(
+        "/access-requests",
+        json={
+            "requester_email": "test.user@asteriatech.local",
+            "resource_id": 0,
+            "reason": "Test de validation d'un identifiant de ressource invalide.",
+            "start_date": "2026-07-01",
+            "end_date": "2026-07-31",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_manager_decision_comment_too_short_422() -> None:
+    """Un commentaire de moins de 5 caractères doit être rejeté."""
+    reset_data()
+
+    request_id = create_valid_request()
+
+    response = client.post(
+        f"/access-requests/{request_id}/manager-decision",
+        json={
+            "manager_email": "manager@asteriatech.local",
+            "decision": "APPROVED",
+            "comment": "OK",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_grant_comment_too_short_422() -> None:
+    """Un commentaire trop court lors de l'attribution doit être rejeté."""
+    reset_data()
+
+    request_id = create_valid_request()
+    approve_request(request_id)
+
+    response = client.post(
+        f"/access-requests/{request_id}/grant",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "comment": "OK",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_revoke_reason_too_short_422() -> None:
+    """Un motif de révocation trop court doit être rejeté."""
+    reset_data()
+
+    request_id = create_valid_request()
+    approve_request(request_id)
+
+    grant_response = client.post(
+        f"/access-requests/{request_id}/grant",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "comment": "Attribution valide pour tester la révocation.",
+        },
+    )
+    grant_id = grant_response.json()["id"]
+
+    response = client.post(
+        f"/access-grants/{grant_id}/revoke",
+        json={
+            "it_admin_email": "it.admin@asteriatech.local",
+            "reason": "NA",
+        },
+    )
+
+    assert response.status_code == 422

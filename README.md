@@ -62,6 +62,7 @@ Chaque ressource possède un niveau de sensibilité afin de représenter un cont
 ```text
 accessguard-devsecops/
 ├── app/
+|   ├── auth.ty
 │   ├── main.py
 │   ├── schemas.py
 │   ├── database.py
@@ -77,6 +78,7 @@ accessguard-devsecops/
 ├── security/
 └── tests/
     └── test_accessguard.py
+    └── test_auth.py
 ```
 
 ## Technologies utilisées

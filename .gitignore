@@ -36,3 +36,8 @@ prometheus_data/
 # Rapports générés
 reports/
 *.sarif
+# Base SQLite locale AccessGuard
+accessguard.db
+*.db-journal
+*.db-wal
+*.db-shm

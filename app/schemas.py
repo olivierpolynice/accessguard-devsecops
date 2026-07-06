@@ -14,9 +14,13 @@ class Resource(BaseModel):
 
 
 class AccessRequestCreate(BaseModel):
-    """Données fournies lors de la création d'une demande d'accès."""
+    """
+    Données nécessaires pour créer une demande d'accès.
 
-    requester_email: str = Field(..., min_length=5, max_length=150)
+    L'e-mail du demandeur ne se trouve plus ici :
+    il est récupéré depuis le JWT.
+    """
+
     resource_id: int = Field(..., gt=0)
     reason: str = Field(..., min_length=10, max_length=500)
     start_date: date
@@ -27,7 +31,8 @@ class AccessRequestCreate(BaseModel):
         """Vérifie que la date de fin est cohérente."""
         if self.end_date < self.start_date:
             raise ValueError(
-                "La date de fin doit être postérieure ou égale à la date de début."
+                "La date de fin doit être postérieure ou égale "
+                "à la date de début."
             )
         return self
 
@@ -47,24 +52,33 @@ class AccessRequest(BaseModel):
 
 
 class ManagerDecisionCreate(BaseModel):
-    """Décision prise par un manager sur une demande d'accès."""
+    """
+    Décision prise par un manager.
 
-    manager_email: str = Field(..., min_length=5, max_length=150)
+    L'e-mail du manager est récupéré depuis le JWT.
+    """
+
     decision: str = Field(..., pattern="^(APPROVED|REFUSED)$")
     comment: str = Field(..., min_length=5, max_length=500)
 
 
 class AccessGrantCreate(BaseModel):
-    """Données nécessaires à l'attribution d'un accès par un IT Admin."""
+    """
+    Données nécessaires pour attribuer un accès.
 
-    it_admin_email: str = Field(..., min_length=5, max_length=150)
+    L'e-mail de l'IT admin est récupéré depuis le JWT.
+    """
+
     comment: str = Field(..., min_length=5, max_length=500)
 
 
 class AccessGrantRevoke(BaseModel):
-    """Données nécessaires à la révocation d'un accès."""
+    """
+    Données nécessaires à la révocation d'un accès.
 
-    it_admin_email: str = Field(..., min_length=5, max_length=150)
+    L'e-mail de l'administrateur est récupéré depuis le JWT.
+    """
+
     reason: str = Field(..., min_length=5, max_length=500)
 
 

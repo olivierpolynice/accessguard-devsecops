@@ -1,9 +1,8 @@
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 
 from app.auth import router as auth_router
-
 from app.schemas import (
     AccessGrant,
     AccessGrantCreate,
@@ -14,6 +13,7 @@ from app.schemas import (
     ManagerDecisionCreate,
     Resource,
 )
+from app.security import get_current_user, require_roles
 from app.seed import get_seed_resources
 
 app = FastAPI(
@@ -22,10 +22,11 @@ app = FastAPI(
         "API pédagogique de gestion et de gouvernance des accès "
         "internes pour l'entreprise fictive AsteriaTech."
     ),
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.include_router(auth_router)
+
 RESOURCES = get_seed_resources()
 
 ACCESS_REQUESTS: list[AccessRequest] = []
@@ -100,7 +101,7 @@ def health_check() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "AccessGuard",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "checked_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -121,8 +122,15 @@ def list_resources() -> list[Resource]:
     status_code=status.HTTP_201_CREATED,
     tags=["Access Requests"],
 )
-def create_access_request(payload: AccessRequestCreate) -> AccessRequest:
-    """Crée une demande d'accès soumise à la validation du manager."""
+def create_access_request(
+    payload: AccessRequestCreate,
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> AccessRequest:
+    """
+    Crée une demande d'accès.
+
+    L'adresse e-mail utilisée vient obligatoirement du JWT.
+    """
     resource = next(
         (
             item
@@ -140,7 +148,7 @@ def create_access_request(payload: AccessRequestCreate) -> AccessRequest:
 
     access_request = AccessRequest(
         id=len(ACCESS_REQUESTS) + 1,
-        requester_email=payload.requester_email,
+        requester_email=current_user["email"],
         resource_id=resource.id,
         resource_name=resource.name,
         reason=payload.reason,
@@ -153,7 +161,7 @@ def create_access_request(payload: AccessRequestCreate) -> AccessRequest:
     ACCESS_REQUESTS.append(access_request)
 
     create_audit_log(
-        actor_email=payload.requester_email,
+        actor_email=current_user["email"],
         action="ACCESS_REQUEST_CREATED",
         entity_type="access_request",
         entity_id=access_request.id,
@@ -168,8 +176,23 @@ def create_access_request(payload: AccessRequestCreate) -> AccessRequest:
     response_model=list[AccessRequest],
     tags=["Access Requests"],
 )
-def list_access_requests() -> list[AccessRequest]:
-    """Retourne les demandes d'accès créées dans l'environnement local."""
+def list_access_requests(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> list[AccessRequest]:
+    """
+    Retourne les demandes d'accès selon le rôle.
+
+    employee : voit uniquement ses demandes.
+    manager, it_admin et security_admin : voient toutes les demandes
+    de cet environnement pédagogique.
+    """
+    if current_user["role"] == "employee":
+        return [
+            item
+            for item in ACCESS_REQUESTS
+            if item.requester_email == current_user["email"]
+        ]
+
     return ACCESS_REQUESTS
 
 
@@ -178,9 +201,23 @@ def list_access_requests() -> list[AccessRequest]:
     response_model=AccessRequest,
     tags=["Access Requests"],
 )
-def get_access_request(request_id: int) -> AccessRequest:
-    """Retourne le détail d'une demande d'accès à partir de son identifiant."""
-    return get_access_request_or_404(request_id)
+def get_access_request(
+    request_id: int,
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> AccessRequest:
+    """Retourne le détail d'une demande d'accès."""
+    access_request = get_access_request_or_404(request_id)
+
+    if (
+        current_user["role"] == "employee"
+        and access_request.requester_email != current_user["email"]
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vous ne pouvez consulter que vos propres demandes.",
+        )
+
+    return access_request
 
 
 @app.post(
@@ -191,8 +228,13 @@ def get_access_request(request_id: int) -> AccessRequest:
 def manager_decision(
     request_id: int,
     payload: ManagerDecisionCreate,
+    current_user: dict[str, str] = Depends(require_roles("manager")),
 ) -> AccessRequest:
-    """Permet au manager d'approuver ou de refuser une demande."""
+    """
+    Permet au manager d'approuver ou de refuser une demande.
+
+    JWT et rôle sont vérifiés avant la recherche de la demande.
+    """
     access_request = get_access_request_or_404(request_id)
 
     if access_request.status != "PENDING_MANAGER":
@@ -207,7 +249,7 @@ def manager_decision(
     access_request.status = payload.decision
 
     create_audit_log(
-        actor_email=payload.manager_email,
+        actor_email=current_user["email"],
         action="MANAGER_DECISION",
         entity_type="access_request",
         entity_id=access_request.id,
@@ -226,15 +268,21 @@ def manager_decision(
 def grant_access(
     request_id: int,
     payload: AccessGrantCreate,
+    current_user: dict[str, str] = Depends(require_roles("it_admin")),
 ) -> AccessGrant:
-    """Attribue un accès après approbation de la demande."""
+    """
+    Attribue un accès après approbation de la demande.
+
+    Seul le rôle it_admin peut effectuer cette action.
+    """
     access_request = get_access_request_or_404(request_id)
 
     existing_grant = next(
         (
             grant
             for grant in ACCESS_GRANTS
-            if grant.request_id == access_request.id and grant.status == "ACTIVE"
+            if grant.request_id == access_request.id
+            and grant.status == "ACTIVE"
         ),
         None,
     )
@@ -269,7 +317,7 @@ def grant_access(
     access_request.status = "GRANTED"
 
     create_audit_log(
-        actor_email=payload.it_admin_email,
+        actor_email=current_user["email"],
         action="ACCESS_GRANTED",
         entity_type="access_grant",
         entity_id=access_grant.id,
@@ -284,8 +332,29 @@ def grant_access(
     response_model=list[AccessGrant],
     tags=["Access Grants"],
 )
-def list_access_grants() -> list[AccessGrant]:
-    """Retourne les accès attribués dans l'environnement local."""
+def list_access_grants(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> list[AccessGrant]:
+    """
+    Retourne les accès attribués selon le rôle.
+
+    employee : voit uniquement ses propres accès.
+    it_admin et security_admin : voient tous les accès.
+    manager : reçoit 403.
+    """
+    if current_user["role"] == "employee":
+        return [
+            grant
+            for grant in ACCESS_GRANTS
+            if grant.requester_email == current_user["email"]
+        ]
+
+    if current_user["role"] == "manager":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Le rôle manager ne peut pas consulter les accès attribués.",
+        )
+
     return ACCESS_GRANTS
 
 
@@ -297,8 +366,15 @@ def list_access_grants() -> list[AccessGrant]:
 def revoke_access(
     grant_id: int,
     payload: AccessGrantRevoke,
+    current_user: dict[str, str] = Depends(
+        require_roles("it_admin", "security_admin")
+    ),
 ) -> AccessGrant:
-    """Révoque un accès actif et génère un événement d'audit."""
+    """
+    Révoque un accès actif.
+
+    Seuls it_admin et security_admin peuvent révoquer un accès.
+    """
     access_grant = get_access_grant_or_404(grant_id)
 
     if access_grant.status != "ACTIVE":
@@ -311,7 +387,7 @@ def revoke_access(
     access_grant.revoked_at = datetime.now(timezone.utc)
 
     create_audit_log(
-        actor_email=payload.it_admin_email,
+        actor_email=current_user["email"],
         action="ACCESS_REVOKED",
         entity_type="access_grant",
         entity_id=access_grant.id,
@@ -326,6 +402,14 @@ def revoke_access(
     response_model=list[AuditLog],
     tags=["Audit"],
 )
-def list_audit_logs() -> list[AuditLog]:
-    """Retourne le journal d'audit local de la plateforme."""
+def list_audit_logs(
+    current_user: dict[str, str] = Depends(
+        require_roles("it_admin", "security_admin")
+    ),
+) -> list[AuditLog]:
+    """
+    Retourne le journal d'audit local.
+
+    Accès limité aux administrateurs IT et sécurité.
+    """
     return AUDIT_LOGS

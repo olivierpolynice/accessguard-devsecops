@@ -417,3 +417,7 @@ def list_audit_logs(
 ) -> list[AuditLog]:
     """Retourne le journal d'audit persistant."""
     return get_audit_logs_from_database()
+
+Instrumentator(should_instrument_requests_inprogress=True).instrument(app).expose(
+    app, endpoint="/metrics", tags=["Monitoring"]
+)

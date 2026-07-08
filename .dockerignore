@@ -1,0 +1,12 @@
+.venv
+__pycache__
+*.pyc
+.git
+.github
+docs/screenshots
+accessguard.db
+*.db-journal
+*.db-wal
+*.db-shm
+.env
+.pytest_cache

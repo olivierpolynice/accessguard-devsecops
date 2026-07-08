@@ -1,0 +1,19 @@
+services:
+  accessguard-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: accessguard-api
+    ports:
+      - "8000:8000"
+    environment:
+      ACCESSGUARD_DATABASE_PATH: /app/data/accessguard.db
+      ACCESSGUARD_SECRET_KEY: accessguard-docker-demo-secret-change-in-production
+      ACCESSGUARD_ALGORITHM: HS256
+      ACCESSGUARD_TOKEN_EXPIRE_MINUTES: "60"
+    volumes:
+      - accessguard_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  accessguard_data:

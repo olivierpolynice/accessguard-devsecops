@@ -9,6 +9,7 @@ APP_DIRECTORY = PROJECT_ROOT / "app"
 sys.path.insert(0, str(APP_DIRECTORY))
 
 from main import ACCESS_GRANTS, ACCESS_REQUESTS, AUDIT_LOGS, app  # noqa: E402
+from app.database import clear_database  # noqa: E402
 from app.security import create_access_token  # noqa: E402
 
 
@@ -16,10 +17,11 @@ client = TestClient(app)
 
 
 def reset_data() -> None:
-    """Réinitialise les données locales entre les tests."""
+    """Réinitialise les données mémoire et SQLite entre les tests."""
     ACCESS_REQUESTS.clear()
     ACCESS_GRANTS.clear()
     AUDIT_LOGS.clear()
+    clear_database()
 
 
 def auth_headers(email: str, role: str) -> dict[str, str]:

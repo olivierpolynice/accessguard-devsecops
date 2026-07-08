@@ -3,6 +3,20 @@ from datetime import datetime, timezone
 from fastapi import Depends, FastAPI, HTTPException, status
 
 from app.auth import router as auth_router
+from app.database import (
+    get_access_grant_from_database,
+    get_access_grants_from_database,
+    get_access_request_from_database,
+    get_access_requests_from_database,
+    get_active_grant_for_request,
+    get_audit_logs_from_database,
+    initialize_database,
+    revoke_access_grant,
+    save_access_grant,
+    save_access_request,
+    save_audit_log,
+    update_access_request_status,
+)
 from app.schemas import (
     AccessGrant,
     AccessGrantCreate,
@@ -26,12 +40,24 @@ app = FastAPI(
 )
 
 app.include_router(auth_router)
+initialize_database()
 
 RESOURCES = get_seed_resources()
 
+# SQLite est la source de vérité. Ces listes restent pour les tests existants.
 ACCESS_REQUESTS: list[AccessRequest] = []
 ACCESS_GRANTS: list[AccessGrant] = []
 AUDIT_LOGS: list[AuditLog] = []
+
+
+def remember(items: list, item: object) -> None:
+    """Met à jour le cache mémoire utilisé par les tests."""
+    item_id = getattr(item, "id")
+    for index, existing_item in enumerate(items):
+        if getattr(existing_item, "id") == item_id:
+            items[index] = item
+            return
+    items.append(item)
 
 
 def create_audit_log(
@@ -41,9 +67,9 @@ def create_audit_log(
     entity_id: int,
     outcome: str,
 ) -> None:
-    """Ajoute une trace dans le journal d'audit local."""
+    """Ajoute une trace d'audit dans SQLite et dans le cache de test."""
     audit_log = AuditLog(
-        id=len(AUDIT_LOGS) + 1,
+        id=0,
         actor_email=actor_email,
         action=action,
         entity_type=entity_type,
@@ -51,15 +77,14 @@ def create_audit_log(
         outcome=outcome,
         created_at=datetime.now(timezone.utc),
     )
-    AUDIT_LOGS.append(audit_log)
+
+    persisted_audit_log = save_audit_log(audit_log)
+    remember(AUDIT_LOGS, persisted_audit_log)
 
 
 def get_access_request_or_404(request_id: int) -> AccessRequest:
-    """Retourne une demande ou déclenche une erreur 404."""
-    access_request = next(
-        (item for item in ACCESS_REQUESTS if item.id == request_id),
-        None,
-    )
+    """Retourne une demande persistée ou déclenche une erreur 404."""
+    access_request = get_access_request_from_database(request_id)
 
     if access_request is None:
         raise HTTPException(
@@ -67,15 +92,13 @@ def get_access_request_or_404(request_id: int) -> AccessRequest:
             detail="La demande d'accès est introuvable.",
         )
 
+    remember(ACCESS_REQUESTS, access_request)
     return access_request
 
 
 def get_access_grant_or_404(grant_id: int) -> AccessGrant:
-    """Retourne un accès attribué ou déclenche une erreur 404."""
-    access_grant = next(
-        (item for item in ACCESS_GRANTS if item.id == grant_id),
-        None,
-    )
+    """Retourne un accès persistant ou déclenche une erreur 404."""
+    access_grant = get_access_grant_from_database(grant_id)
 
     if access_grant is None:
         raise HTTPException(
@@ -83,6 +106,7 @@ def get_access_grant_or_404(grant_id: int) -> AccessGrant:
             detail="L'accès attribué est introuvable.",
         )
 
+    remember(ACCESS_GRANTS, access_grant)
     return access_grant
 
 
@@ -126,11 +150,7 @@ def create_access_request(
     payload: AccessRequestCreate,
     current_user: dict[str, str] = Depends(get_current_user),
 ) -> AccessRequest:
-    """
-    Crée une demande d'accès.
-
-    L'adresse e-mail utilisée vient obligatoirement du JWT.
-    """
+    """Crée et persiste une demande d'accès."""
     resource = next(
         (
             item
@@ -146,8 +166,8 @@ def create_access_request(
             detail="La ressource demandée est introuvable ou inactive.",
         )
 
-    access_request = AccessRequest(
-        id=len(ACCESS_REQUESTS) + 1,
+    draft_request = AccessRequest(
+        id=0,
         requester_email=current_user["email"],
         resource_id=resource.id,
         resource_name=resource.name,
@@ -158,7 +178,8 @@ def create_access_request(
         created_at=datetime.now(timezone.utc),
     )
 
-    ACCESS_REQUESTS.append(access_request)
+    access_request = save_access_request(draft_request)
+    remember(ACCESS_REQUESTS, access_request)
 
     create_audit_log(
         actor_email=current_user["email"],
@@ -179,21 +200,11 @@ def create_access_request(
 def list_access_requests(
     current_user: dict[str, str] = Depends(get_current_user),
 ) -> list[AccessRequest]:
-    """
-    Retourne les demandes d'accès selon le rôle.
-
-    employee : voit uniquement ses demandes.
-    manager, it_admin et security_admin : voient toutes les demandes
-    de cet environnement pédagogique.
-    """
+    """Retourne les demandes selon le rôle du JWT."""
     if current_user["role"] == "employee":
-        return [
-            item
-            for item in ACCESS_REQUESTS
-            if item.requester_email == current_user["email"]
-        ]
+        return get_access_requests_from_database(current_user["email"])
 
-    return ACCESS_REQUESTS
+    return get_access_requests_from_database()
 
 
 @app.get(
@@ -205,7 +216,7 @@ def get_access_request(
     request_id: int,
     current_user: dict[str, str] = Depends(get_current_user),
 ) -> AccessRequest:
-    """Retourne le détail d'une demande d'accès."""
+    """Retourne le détail d'une demande persistée."""
     access_request = get_access_request_or_404(request_id)
 
     if (
@@ -230,11 +241,7 @@ def manager_decision(
     payload: ManagerDecisionCreate,
     current_user: dict[str, str] = Depends(require_roles("manager")),
 ) -> AccessRequest:
-    """
-    Permet au manager d'approuver ou de refuser une demande.
-
-    JWT et rôle sont vérifiés avant la recherche de la demande.
-    """
+    """Approuve ou refuse une demande persistée."""
     access_request = get_access_request_or_404(request_id)
 
     if access_request.status != "PENDING_MANAGER":
@@ -246,17 +253,25 @@ def manager_decision(
             ),
         )
 
-    access_request.status = payload.decision
+    updated_request = update_access_request_status(request_id, payload.decision)
+
+    if updated_request is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="La demande d'accès est introuvable.",
+        )
+
+    remember(ACCESS_REQUESTS, updated_request)
 
     create_audit_log(
         actor_email=current_user["email"],
         action="MANAGER_DECISION",
         entity_type="access_request",
-        entity_id=access_request.id,
+        entity_id=updated_request.id,
         outcome=f"{payload.decision}: {payload.comment}",
     )
 
-    return access_request
+    return updated_request
 
 
 @app.post(
@@ -270,22 +285,10 @@ def grant_access(
     payload: AccessGrantCreate,
     current_user: dict[str, str] = Depends(require_roles("it_admin")),
 ) -> AccessGrant:
-    """
-    Attribue un accès après approbation de la demande.
-
-    Seul le rôle it_admin peut effectuer cette action.
-    """
+    """Attribue et persiste un accès après approbation."""
     access_request = get_access_request_or_404(request_id)
 
-    existing_grant = next(
-        (
-            grant
-            for grant in ACCESS_GRANTS
-            if grant.request_id == access_request.id
-            and grant.status == "ACTIVE"
-        ),
-        None,
-    )
+    existing_grant = get_active_grant_for_request(access_request.id)
 
     if existing_grant is not None:
         raise HTTPException(
@@ -302,8 +305,8 @@ def grant_access(
             ),
         )
 
-    access_grant = AccessGrant(
-        id=len(ACCESS_GRANTS) + 1,
+    draft_grant = AccessGrant(
+        id=0,
         request_id=access_request.id,
         requester_email=access_request.requester_email,
         resource_id=access_request.resource_id,
@@ -313,8 +316,12 @@ def grant_access(
         expires_at=access_request.end_date,
     )
 
-    ACCESS_GRANTS.append(access_grant)
-    access_request.status = "GRANTED"
+    access_grant = save_access_grant(draft_grant)
+    remember(ACCESS_GRANTS, access_grant)
+
+    updated_request = update_access_request_status(access_request.id, "GRANTED")
+    if updated_request is not None:
+        remember(ACCESS_REQUESTS, updated_request)
 
     create_audit_log(
         actor_email=current_user["email"],
@@ -335,19 +342,9 @@ def grant_access(
 def list_access_grants(
     current_user: dict[str, str] = Depends(get_current_user),
 ) -> list[AccessGrant]:
-    """
-    Retourne les accès attribués selon le rôle.
-
-    employee : voit uniquement ses propres accès.
-    it_admin et security_admin : voient tous les accès.
-    manager : reçoit 403.
-    """
+    """Retourne les accès selon le rôle du JWT."""
     if current_user["role"] == "employee":
-        return [
-            grant
-            for grant in ACCESS_GRANTS
-            if grant.requester_email == current_user["email"]
-        ]
+        return get_access_grants_from_database(current_user["email"])
 
     if current_user["role"] == "manager":
         raise HTTPException(
@@ -355,7 +352,7 @@ def list_access_grants(
             detail="Le rôle manager ne peut pas consulter les accès attribués.",
         )
 
-    return ACCESS_GRANTS
+    return get_access_grants_from_database()
 
 
 @app.post(
@@ -370,11 +367,7 @@ def revoke_access(
         require_roles("it_admin", "security_admin")
     ),
 ) -> AccessGrant:
-    """
-    Révoque un accès actif.
-
-    Seuls it_admin et security_admin peuvent révoquer un accès.
-    """
+    """Révoque et persiste la révocation d'un accès."""
     access_grant = get_access_grant_or_404(grant_id)
 
     if access_grant.status != "ACTIVE":
@@ -383,18 +376,26 @@ def revoke_access(
             detail="Cet accès ne peut plus être révoqué dans son état actuel.",
         )
 
-    access_grant.status = "REVOKED"
-    access_grant.revoked_at = datetime.now(timezone.utc)
+    revoked_at = datetime.now(timezone.utc)
+    updated_grant = revoke_access_grant(grant_id, revoked_at.isoformat())
+
+    if updated_grant is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cet accès ne peut plus être révoqué dans son état actuel.",
+        )
+
+    remember(ACCESS_GRANTS, updated_grant)
 
     create_audit_log(
         actor_email=current_user["email"],
         action="ACCESS_REVOKED",
         entity_type="access_grant",
-        entity_id=access_grant.id,
+        entity_id=updated_grant.id,
         outcome=payload.reason,
     )
 
-    return access_grant
+    return updated_grant
 
 
 @app.get(
@@ -407,9 +408,5 @@ def list_audit_logs(
         require_roles("it_admin", "security_admin")
     ),
 ) -> list[AuditLog]:
-    """
-    Retourne le journal d'audit local.
-
-    Accès limité aux administrateurs IT et sécurité.
-    """
-    return AUDIT_LOGS
+    """Retourne le journal d'audit persistant."""
+    return get_audit_logs_from_database()

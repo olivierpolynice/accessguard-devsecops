@@ -13,6 +13,15 @@ from main import ACCESS_GRANTS, ACCESS_REQUESTS, AUDIT_LOGS, app  # noqa: E402
 
 client = TestClient(app)
 
+def get_token(email: str, password: str) -> str:
+    response = client.post("/auth/login", json={"email": email, "password": password})
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+EMPLOYEE_HEADERS = {"Authorization": f"Bearer {get_token('alice.employee@asteriatech.local', 'Employee123!')}"}
+MANAGER_HEADERS = {"Authorization": f"Bearer {get_token('marc.manager@asteriatech.local', 'Manager123!')}"}
+IT_ADMIN_HEADERS = {"Authorization": f"Bearer {get_token('ines.itadmin@asteriatech.local', 'Admin123!')}"}
+SECURITY_ADMIN_HEADERS = {"Authorization": f"Bearer {get_token('sam.security@asteriatech.local', 'Security123!')}"}
 
 def reset_data() -> None:
     """Réinitialise les données locales entre les tests."""
@@ -32,6 +41,7 @@ def create_valid_request() -> int:
             "start_date": "2026-07-01",
             "end_date": "2026-07-31",
         },
+        headers=EMPLOYEE_HEADERS,
     )
 
     assert response.status_code == 201
@@ -47,6 +57,7 @@ def approve_request(request_id: int) -> None:
             "decision": "APPROVED",
             "comment": "Validation du besoin métier pour les tests.",
         },
+        headers=MANAGER_HEADERS,
     )
 
     assert response.status_code == 200
@@ -120,6 +131,7 @@ def test_reject_invalid_dates() -> None:
             "start_date": "2026-07-31",
             "end_date": "2026-07-01",
         },
+        headers=EMPLOYEE_HEADERS,
     )
 
     assert response.status_code == 422
@@ -137,6 +149,7 @@ def test_complete_access_workflow() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "comment": "Accès attribué après approbation du manager.",
         },
+        headers=IT_ADMIN_HEADERS,
     )
 
     assert grant_response.status_code == 201
@@ -150,6 +163,7 @@ def test_complete_access_workflow() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "reason": "Fin de la période de test.",
         },
+        headers=IT_ADMIN_HEADERS,
     )
 
     assert revoke_response.status_code == 200
@@ -173,6 +187,7 @@ def test_request_not_found_404() -> None:
             "decision": "APPROVED",
             "comment": "Test d'une demande inexistante.",
         },
+        headers=MANAGER_HEADERS,
     )
 
     assert response.status_code == 404
@@ -190,6 +205,7 @@ def test_grant_before_approval_409() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "comment": "Tentative d'attribution avant approbation.",
         },
+        headers=IT_ADMIN_HEADERS,
     )
 
     assert response.status_code == 409
@@ -210,6 +226,7 @@ def test_manager_refusal() -> None:
             "decision": "REFUSED",
             "comment": "Accès non justifié pour le périmètre demandé.",
         },
+        headers=MANAGER_HEADERS,
     )
 
     assert response.status_code == 200
@@ -230,6 +247,7 @@ def test_resource_not_found_404() -> None:
             "start_date": "2026-07-01",
             "end_date": "2026-07-31",
         },
+        headers=EMPLOYEE_HEADERS,
     )
 
     assert response.status_code == 404
@@ -250,6 +268,7 @@ def test_duplicate_active_grant_409() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "comment": "Première attribution pour vérifier le doublon.",
         },
+        headers=IT_ADMIN_HEADERS,
     )
 
     assert first_grant.status_code == 201
@@ -261,6 +280,7 @@ def test_duplicate_active_grant_409() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "comment": "Tentative de seconde attribution.",
         },
+        headers=IT_ADMIN_HEADERS,
     )
 
     assert second_grant.status_code == 409
@@ -279,6 +299,7 @@ def test_invalid_manager_status_422() -> None:
             "decision": "INVALID",
             "comment": "Test d'un statut manager non autorisé.",
         },
+        headers=MANAGER_HEADERS,
     )
 
     assert response.status_code == 422
@@ -296,6 +317,7 @@ def test_create_access_request_reason_too_short_422() -> None:
             "start_date": "2026-07-01",
             "end_date": "2026-07-31",
         },
+        headers=EMPLOYEE_HEADERS,
     )
 
     assert response.status_code == 422
@@ -314,6 +336,7 @@ def test_create_access_request_invalid_resource_id_422() -> None:
             "start_date": "2026-07-01",
             "end_date": "2026-07-31",
         },
+        headers=EMPLOYEE_HEADERS,
     )
 
     assert response.status_code == 422
@@ -332,6 +355,7 @@ def test_manager_decision_comment_too_short_422() -> None:
             "decision": "APPROVED",
             "comment": "OK",
         },
+        headers=MANAGER_HEADERS,
     )
 
     assert response.status_code == 422
@@ -350,6 +374,7 @@ def test_grant_comment_too_short_422() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "comment": "OK",
         },
+        headers=IT_ADMIN_HEADERS,
     )
 
     assert response.status_code == 422
@@ -368,6 +393,7 @@ def test_revoke_reason_too_short_422() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "comment": "Attribution valide pour tester la révocation.",
         },
+        headers=IT_ADMIN_HEADERS,
     )
     grant_id = grant_response.json()["id"]
 
@@ -377,6 +403,7 @@ def test_revoke_reason_too_short_422() -> None:
             "it_admin_email": "it.admin@asteriatech.local",
             "reason": "NA",
         },
+        headers=IT_ADMIN_HEADERS,
     )
 
     assert response.status_code == 422

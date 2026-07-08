@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 
 from app.auth import router as auth_router
+
+from app.dependencies import CurrentUser, require_role
 
 from app.schemas import (
     AccessGrant,
@@ -15,6 +17,7 @@ from app.schemas import (
     Resource,
 )
 from app.seed import get_seed_resources
+from permissions import ROLE_PERMISSIONS
 
 app = FastAPI(
     title="AccessGuard API",
@@ -121,7 +124,7 @@ def list_resources() -> list[Resource]:
     status_code=status.HTTP_201_CREATED,
     tags=["Access Requests"],
 )
-def create_access_request(payload: AccessRequestCreate) -> AccessRequest:
+def create_access_request(payload: AccessRequestCreate, current_user: CurrentUser = Depends(require_role(*ROLE_PERMISSIONS["create_access_request"]))) -> AccessRequest:
     """Crée une demande d'accès soumise à la validation du manager."""
     resource = next(
         (
@@ -191,6 +194,7 @@ def get_access_request(request_id: int) -> AccessRequest:
 def manager_decision(
     request_id: int,
     payload: ManagerDecisionCreate,
+    current_user: CurrentUser = Depends(require_role(*ROLE_PERMISSIONS["manager_decision"])),
 ) -> AccessRequest:
     """Permet au manager d'approuver ou de refuser une demande."""
     access_request = get_access_request_or_404(request_id)
@@ -226,6 +230,7 @@ def manager_decision(
 def grant_access(
     request_id: int,
     payload: AccessGrantCreate,
+    current_user: CurrentUser = Depends(require_role(*ROLE_PERMISSIONS["grant_access"])),
 ) -> AccessGrant:
     """Attribue un accès après approbation de la demande."""
     access_request = get_access_request_or_404(request_id)
@@ -297,6 +302,7 @@ def list_access_grants() -> list[AccessGrant]:
 def revoke_access(
     grant_id: int,
     payload: AccessGrantRevoke,
+    current_user: CurrentUser = Depends(require_role(*ROLE_PERMISSIONS["revoke_access"])),
 ) -> AccessGrant:
     """Révoque un accès actif et génère un événement d'audit."""
     access_grant = get_access_grant_or_404(grant_id)
@@ -326,6 +332,7 @@ def revoke_access(
     response_model=list[AuditLog],
     tags=["Audit"],
 )
-def list_audit_logs() -> list[AuditLog]:
+def list_audit_logs(current_user: CurrentUser = Depends(require_role(*ROLE_PERMISSIONS["list_audit_logs"]))) -> list[AuditLog]:
     """Retourne le journal d'audit local de la plateforme."""
     return AUDIT_LOGS
+

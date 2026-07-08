@@ -5,3 +5,4 @@ httpx
 bcrypt
 PyJWT
 python-dotenv
+prometheus-fastapi-instrumentator

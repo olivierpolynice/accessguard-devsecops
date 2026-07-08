@@ -29,6 +29,7 @@ from app.schemas import (
 )
 from app.security import get_current_user, require_roles
 from app.seed import get_seed_resources
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI(
     title="AccessGuard API",
@@ -41,6 +42,12 @@ app = FastAPI(
 
 app.include_router(auth_router)
 initialize_database()
+
+# Observabilité V3 : expose /metrics au format Prometheus (latence, nombre de
+# requêtes, codes de statut par endpoint). Le "instrument().expose()" ajoute
+# une route GET /metrics sans authentification, scrapée par Prometheus.
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", tags=["Monitoring"])
+
 
 RESOURCES = get_seed_resources()
 

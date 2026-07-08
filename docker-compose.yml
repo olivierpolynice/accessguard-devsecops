@@ -14,6 +14,47 @@ services:
     volumes:
       - accessguard_data:/app/data
     restart: unless-stopped
+    networks:
+      - accessguard-net
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: accessguard-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - accessguard-api
+    restart: unless-stopped
+    networks:
+      - accessguard-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: accessguard-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - accessguard-net
+
+networks:
+  accessguard-net:
+    driver: bridge
 
 volumes:
   accessguard_data:
+  prometheus_data:
+  grafana_data:

@@ -41,3 +41,5 @@ accessguard.db
 *.db-journal
 *.db-wal
 *.db-shm
+# Azurite local emulator
+__azurite_db_*.json

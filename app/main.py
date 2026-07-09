@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import Depends, FastAPI, HTTPException, status
 
 from app.auth import router as auth_router
@@ -42,6 +42,7 @@ app = FastAPI(
 
 app.include_router(auth_router)
 initialize_database()
+Instrumentator().instrument(app).expose(app)
 
 # Observabilité V3 : expose /metrics au format Prometheus (latence, nombre de
 # requêtes, codes de statut par endpoint). Le "instrument().expose()" ajoute

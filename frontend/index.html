@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AccessGuard — Interface V3</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">AG</div>
+      <div>
+        <h1>AccessGuard</h1>
+        <p>AsteriaTech IAM</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#dashboard" class="active">Dashboard</a>
+      <a href="#requests">Demandes d’accès</a>
+      <a href="#grants">Accès attribués</a>
+      <a href="#audit">Audit logs</a>
+      <a href="#monitoring">Monitoring</a>
+    </nav>
+    <div class="sidebar-card">
+      <span class="status-dot"></span>
+      <div><strong>API active</strong><small>FastAPI · SQLite · JWT</small></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Projet pédagogique M1 — V3</p>
+        <h2>Gouvernance des accès internes</h2>
+      </div>
+      <div class="user-card">
+        <div class="avatar">OP</div>
+        <div><strong>Olivier Polynice</strong><small>DevSecOps / Cybersecurity</small></div>
+      </div>
+    </header>
+
+    <section id="dashboard" class="section">
+      <div class="section-heading">
+        <div><p class="eyebrow">Vue globale</p><h3>Dashboard opérationnel</h3></div>
+        <button class="primary-btn">Nouvelle demande</button>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card"><span>Demandes en attente</span><strong>08</strong><p>Validation manager requise</p></article>
+        <article class="stat-card success"><span>Accès actifs</span><strong>24</strong><p>Accès actuellement ouverts</p></article>
+        <article class="stat-card warning"><span>Révocations</span><strong>03</strong><p>Actions sécurité récentes</p></article>
+        <article class="stat-card dark"><span>Disponibilité API</span><strong>UP</strong><p>Prometheus scrape OK</p></article>
+      </div>
+
+      <div class="content-grid">
+        <article class="panel large">
+          <div class="panel-header"><h4>Demandes récentes</h4><span class="badge">Workflow</span></div>
+          <table>
+            <thead><tr><th>ID</th><th>Demandeur</th><th>Ressource</th><th>Statut</th><th>Risque</th></tr></thead>
+            <tbody>
+              <tr><td>#101</td><td>Alice Employee</td><td>VPN Entreprise</td><td><span class="pill pending">PENDING</span></td><td>Medium</td></tr>
+              <tr><td>#102</td><td>Marc Manager</td><td>Finance Share</td><td><span class="pill approved">APPROVED</span></td><td>High</td></tr>
+              <tr><td>#103</td><td>Inès IT Admin</td><td>Grafana</td><td><span class="pill granted">GRANTED</span></td><td>Low</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header"><h4>Flux de validation</h4></div>
+          <ol class="timeline">
+            <li><strong>Employee</strong><span>Création demande</span></li>
+            <li><strong>Manager</strong><span>Approbation/refus</span></li>
+            <li><strong>IT Admin</strong><span>Attribution accès</span></li>
+            <li><strong>Security</strong><span>Audit / révocation</span></li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+    <section id="requests" class="section">
+      <div class="section-heading"><div><p class="eyebrow">Workflow métier</p><h3>Demandes d’accès</h3></div><button class="secondary-btn">Exporter CSV</button></div>
+      <article class="panel">
+        <div class="form-grid">
+          <label>Ressource<select><option>VPN Entreprise</option><option>Finance Share</option><option>Admin Console</option><option>Grafana</option></select></label>
+          <label>Date début<input type="date" value="2026-07-08" /></label>
+          <label>Date fin<input type="date" value="2026-07-31" /></label>
+          <label class="wide">Justification<textarea>Accès nécessaire pour réaliser les tests de validation V3.</textarea></label>
+        </div>
+      </article>
+    </section>
+
+    <section id="grants" class="section">
+      <div class="section-heading"><div><p class="eyebrow">Contrôle des accès</p><h3>Accès attribués</h3></div></div>
+      <div class="cards-row">
+        <article class="access-card"><div><h4>VPN Entreprise</h4><p>alice.employee@asteriatech.local</p></div><span class="pill granted">ACTIVE</span></article>
+        <article class="access-card"><div><h4>Grafana Monitoring</h4><p>ines.itadmin@asteriatech.local</p></div><span class="pill revoked">REVOKED</span></article>
+        <article class="access-card"><div><h4>Finance Share</h4><p>marc.manager@asteriatech.local</p></div><span class="pill approved">APPROVED</span></article>
+      </div>
+    </section>
+
+    <section id="audit" class="section">
+      <div class="section-heading"><div><p class="eyebrow">Traçabilité</p><h3>Audit logs</h3></div></div>
+      <article class="panel">
+        <table>
+          <thead><tr><th>Action</th><th>Acteur</th><th>Entité</th><th>Résultat</th><th>Date</th></tr></thead>
+          <tbody>
+            <tr><td>ACCESS_REQUEST_CREATED</td><td>alice.employee</td><td>access_request #101</td><td><span class="pill pending">PENDING_MANAGER</span></td><td>08/07/2026</td></tr>
+            <tr><td>MANAGER_DECISION</td><td>marc.manager</td><td>access_request #102</td><td><span class="pill approved">APPROVED</span></td><td>08/07/2026</td></tr>
+            <tr><td>ACCESS_REVOKED</td><td>sam.security</td><td>access_grant #55</td><td><span class="pill revoked">REVOKED</span></td><td>08/07/2026</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section id="monitoring" class="section">
+      <div class="section-heading"><div><p class="eyebrow">Observabilité V3</p><h3>Monitoring Prometheus & Grafana</h3></div></div>
+      <div class="monitoring-grid">
+        <article class="monitor-card"><span class="monitor-icon">/metrics</span><h4>Endpoint Prometheus</h4><p>L’API expose les métriques HTTP et Python via FastAPI Instrumentator.</p></article>
+        <article class="monitor-card"><span class="monitor-icon">UP</span><h4>Prometheus target</h4><p>Prometheus interroge accessguard-api:8000 toutes les 15 secondes.</p></article>
+        <article class="monitor-card"><span class="monitor-icon">Grafana</span><h4>Dashboard V3</h4><p>Visualisation du statut du service et des métriques HTTP collectées.</p></article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

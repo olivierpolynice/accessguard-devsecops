@@ -6,79 +6,67 @@ from pydantic import BaseModel, Field
 from app.security import create_access_token, hash_password, verify_password
 
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"],
+)
 
 
 class LoginRequest(BaseModel):
-    """Identifiants utilisés pour la connexion de démonstration."""
-
-    email: str = Field(
-        min_length=5,
-        max_length=120,
-        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-    )
+    email: str = Field(min_length=5, max_length=255)
     password: str = Field(min_length=8, max_length=72)
 
 
 class TokenResponse(BaseModel):
-    """Réponse retournée après une connexion réussie."""
-
     access_token: str
-    token_type: str
+    token_type: str = "bearer"
     role: str
+    email: str
 
+
+DEMO_PASSWORD: Final[str] = "AccessGuard123!"
 
 DEMO_USERS: Final[dict[str, dict[str, str]]] = {
     "alice.employee@asteriatech.local": {
+        "email": "alice.employee@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
         "role": "employee",
-        "password_hash": hash_password("Employee123!"),
     },
     "marc.manager@asteriatech.local": {
+        "email": "marc.manager@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
         "role": "manager",
-        "password_hash": hash_password("Manager123!"),
     },
     "ines.itadmin@asteriatech.local": {
+        "email": "ines.itadmin@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
         "role": "it_admin",
-        "password_hash": hash_password("Admin123!"),
     },
-    "sam.security@asteriatech.local": {
+    "paul.security@asteriatech.local": {
+        "email": "paul.security@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
         "role": "security_admin",
-        "password_hash": hash_password("Security123!"),
     },
 }
-
-
-def authenticate_user(email: str, password: str) -> dict[str, str] | None:
-    """Retourne l'utilisateur si les identifiants sont valides."""
-
-    user = DEMO_USERS.get(email)
-
-    if user is None:
-        return None
-
-    if not verify_password(password, user["password_hash"]):
-        return None
-
-    return {
-        "email": email,
-        "role": user["role"],
-    }
 
 
 @router.post(
     "/login",
     response_model=TokenResponse,
-    summary="Connexion et génération d'un token JWT",
+    status_code=status.HTTP_200_OK,
 )
 def login(payload: LoginRequest) -> TokenResponse:
-    """Authentifie un utilisateur et retourne un Bearer token JWT."""
+    normalized_email = payload.email.strip().lower()
+    user = DEMO_USERS.get(normalized_email)
 
-    user = authenticate_user(payload.email, payload.password)
-
-    if user is None:
+    if user is None or not verify_password(
+        payload.password,
+        user["password_hash"],
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Identifiants incorrects.",
+            detail="Adresse e-mail ou mot de passe incorrect.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     access_token = create_access_token(
@@ -90,4 +78,5 @@ def login(payload: LoginRequest) -> TokenResponse:
         access_token=access_token,
         token_type="bearer",
         role=user["role"],
+        email=user["email"],
     )

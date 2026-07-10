@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
-from prometheus_fastapi_instrumentator import Instrumentator
+
 from fastapi import Depends, FastAPI, HTTPException, status
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.auth import router as auth_router
 from app.database import (
@@ -29,7 +30,6 @@ from app.schemas import (
 )
 from app.security import get_current_user, require_roles
 from app.seed import get_seed_resources
-from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI(
     title="AccessGuard API",
@@ -42,12 +42,15 @@ app = FastAPI(
 
 app.include_router(auth_router)
 initialize_database()
-Instrumentator().instrument(app).expose(app)
 
 # Observabilité V3 : expose /metrics au format Prometheus (latence, nombre de
-# requêtes, codes de statut par endpoint). Le "instrument().expose()" ajoute
-# une route GET /metrics sans authentification, scrapée par Prometheus.
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", tags=["Monitoring"])
+# requêtes, codes de statut par endpoint). Un seul appel à Instrumentator()
+# est nécessaire : deux appels sur le même app dupliquent le middleware de
+# collecte de métriques sur chaque requête (bug corrigé ici, présent après
+# le merge V3 qui avait gardé l'ancien appel ET le nouveau).
+Instrumentator(should_instrument_requests_inprogress=True).instrument(app).expose(
+    app, endpoint="/metrics", tags=["Monitoring"]
+)
 
 
 RESOURCES = get_seed_resources()
@@ -56,6 +59,16 @@ RESOURCES = get_seed_resources()
 ACCESS_REQUESTS: list[AccessRequest] = []
 ACCESS_GRANTS: list[AccessGrant] = []
 AUDIT_LOGS: list[AuditLog] = []
+
+# Statuts valides pour /access-requests/status/{status}, utilisés pour
+# renvoyer un 422 explicite plutôt qu'une liste vide silencieuse en cas
+# de faute de frappe sur le statut demandé.
+VALID_ACCESS_REQUEST_STATUSES = {
+    "PENDING_MANAGER",
+    "APPROVED",
+    "REFUSED",
+    "GRANTED",
+}
 
 
 def remember(items: list, item: object) -> None:
@@ -146,6 +159,129 @@ def health_check() -> dict[str, str]:
 def list_resources() -> list[Resource]:
     """Retourne le catalogue des ressources internes actives."""
     return [resource for resource in RESOURCES if resource.is_active]
+
+
+# --- V4 : routes utiles au frontend --------------------------------------
+
+
+@app.get("/me", tags=["Information"])
+def get_me(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> dict[str, str]:
+    """
+    Retourne l'identité de l'utilisateur actuellement authentifié.
+
+    Permet au frontend de savoir qui est connecté et d'afficher le
+    dashboard correspondant à son rôle, sans dupliquer la logique de
+    décodage du JWT côté client.
+    """
+    return {
+        "email": current_user["email"],
+        "role": current_user["role"],
+    }
+
+
+@app.get("/dashboard/summary", tags=["Dashboard"])
+def get_dashboard_summary(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> dict[str, int]:
+    """
+    Retourne des compteurs agrégés pour alimenter les cartes du dashboard.
+
+    Respecte le RBAC existant :
+    - employee : compteurs limités à ses propres demandes/accès.
+    - manager, it_admin, security_admin : compteurs sur l'ensemble du
+      système (nécessaire pour superviser/valider le travail des autres).
+    """
+    is_employee = current_user["role"] == "employee"
+    scope_email = current_user["email"] if is_employee else None
+
+    access_requests = get_access_requests_from_database(scope_email)
+    access_grants = get_access_grants_from_database(scope_email)
+
+    pending_requests = sum(
+        1 for request in access_requests if request.status == "PENDING_MANAGER"
+    )
+    active_grants = sum(1 for grant in access_grants if grant.status == "ACTIVE")
+    revoked_grants = sum(1 for grant in access_grants if grant.status == "REVOKED")
+
+    # Les logs d'audit restent globaux : seuls it_admin/security_admin y ont
+    # accès via /audit-logs, mais le compteur agrégé ne révèle aucun détail
+    # sensible, donc on l'expose à tout utilisateur authentifié pour que le
+    # dashboard reste cohérent visuellement.
+    audit_logs_count = len(get_audit_logs_from_database())
+
+    return {
+        "pending_requests": pending_requests,
+        "active_grants": active_grants,
+        "revoked_grants": revoked_grants,
+        "audit_logs": audit_logs_count,
+    }
+
+
+@app.get(
+    "/access-requests/status/{request_status}",
+    response_model=list[AccessRequest],
+    tags=["Access Requests"],
+)
+def list_access_requests_by_status(
+    request_status: str,
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> list[AccessRequest]:
+    """
+    Retourne les demandes d'accès filtrées par statut.
+
+    Même règle de portée que GET /access-requests : un employee ne voit
+    que ses propres demandes, les autres rôles voient l'ensemble filtré.
+    """
+    normalized_status = request_status.strip().upper()
+
+    if normalized_status not in VALID_ACCESS_REQUEST_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Statut inconnu. Valeurs acceptées : "
+                + ", ".join(sorted(VALID_ACCESS_REQUEST_STATUSES))
+            ),
+        )
+
+    if current_user["role"] == "employee":
+        requests = get_access_requests_from_database(current_user["email"])
+    else:
+        requests = get_access_requests_from_database()
+
+    return [request for request in requests if request.status == normalized_status]
+
+
+@app.get(
+    "/access-grants/active",
+    response_model=list[AccessGrant],
+    tags=["Access Grants"],
+)
+def list_active_access_grants(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> list[AccessGrant]:
+    """
+    Retourne uniquement les accès actuellement actifs (non révoqués).
+
+    Reprend exactement les règles de GET /access-grants (manager exclu,
+    employee limité à ses propres accès) puis filtre sur status=ACTIVE.
+    """
+    if current_user["role"] == "manager":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Le rôle manager ne peut pas consulter les accès attribués.",
+        )
+
+    if current_user["role"] == "employee":
+        grants = get_access_grants_from_database(current_user["email"])
+    else:
+        grants = get_access_grants_from_database()
+
+    return [grant for grant in grants if grant.status == "ACTIVE"]
+
+
+# --- Routes métier existantes (V1/V2) -------------------------------------
 
 
 @app.post(
@@ -418,7 +554,3 @@ def list_audit_logs(
 ) -> list[AuditLog]:
     """Retourne le journal d'audit persistant."""
     return get_audit_logs_from_database()
-
-Instrumentator(should_instrument_requests_inprogress=True).instrument(app).expose(
-    app, endpoint="/metrics", tags=["Monitoring"]
-)

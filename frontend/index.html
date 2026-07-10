@@ -36,8 +36,8 @@
         <h2>Gouvernance des acc&egrave;s internes</h2>
       </div>
       <div class="user-card">
-        <div class="avatar">OP</div>
-        <div><strong>Olivier Polynice</strong><small>DevSecOps / Cybersecurity</small></div>
+        <div class="avatar">EI</div>
+        <div><strong>Elodie IPARRAGUIRRE</strong><small>UI/UX &middot; Cybersecurity</small></div>
       </div>
     </header>
 
@@ -112,7 +112,7 @@
           <div class="panel-header"><h4>Flux de validation</h4></div>
           <ol class="timeline">
             <li><strong>Employee</strong><span>Cr&eacute;ation demande</span></li>
-            <li><strong>Manager</strong><span>Approbation/refus</span></li>
+            <li><strong>Manager</strong><span>Approbation / refus</span></li>
             <li><strong>IT Admin</strong><span>Attribution acc&egrave;s</span></li>
             <li><strong>Security</strong><span>Audit / r&eacute;vocation</span></li>
           </ol>
@@ -161,14 +161,16 @@
         <div><p class="eyebrow">Tra&ccedil;abilit&eacute;</p><h3>Audit logs</h3></div>
       </div>
       <article class="panel">
-        <table>
-          <thead><tr><th>Action</th><th>Acteur</th><th>Entit&eacute;</th><th>R&eacute;sultat</th><th>Date</th></tr></thead>
-          <tbody>
-            <tr><td>ACCESS_REQUEST_CREATED</td><td>alice.employee</td><td>access_request #101</td><td><span class="pill pending">PENDING_MANAGER</span></td><td>08/07/2026</td></tr>
-            <tr><td>MANAGER_DECISION</td><td>marc.manager</td><td>access_request #102</td><td><span class="pill approved">APPROVED</span></td><td>08/07/2026</td></tr>
-            <tr><td>ACCESS_REVOKED</td><td>sam.security</td><td>access_grant #55</td><td><span class="pill revoked">REVOKED</span></td><td>08/07/2026</td></tr>
-          </tbody>
-        </table>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>Action</th><th>Acteur</th><th>Entit&eacute;</th><th>R&eacute;sultat</th><th>Date</th></tr></thead>
+            <tbody>
+              <tr><td>ACCESS_REQUEST_CREATED</td><td>alice.employee</td><td>access_request #101</td><td><span class="pill pending">PENDING_MANAGER</span></td><td>08/07/2026</td></tr>
+              <tr><td>MANAGER_DECISION</td><td>marc.manager</td><td>access_request #102</td><td><span class="pill approved">APPROVED</span></td><td>08/07/2026</td></tr>
+              <tr><td>ACCESS_REVOKED</td><td>sam.security</td><td>access_grant #55</td><td><span class="pill revoked">REVOKED</span></td><td>08/07/2026</td></tr>
+            </tbody>
+          </table>
+        </div>
       </article>
     </section>
 

@@ -1,10 +1,27 @@
-# Frontend V3 — Prototype AccessGuard
+# Frontend AccessGuard
 
-## Objectif
+## Lancement avec Live Server
 
-Ce dossier contient un prototype frontend statique pour la V3 du projet AccessGuard.
+1. Ouvrir le projet dans VS Code.
+2. Installer l'extension Live Server.
+3. Ouvrir `index.html`.
+4. Cliquer sur « Open with Live Server ».
 
-Il sert à présenter une interface professionnelle destinée à rendre le projet plus lisible pour un utilisateur non technique ou un jury.
+## Lancement avec Python sur Mac
+
+Depuis le dossier `frontend` :
+
+```bash
+python3 -m http.server 5500
+```
+
+Puis ouvrir : http://localhost:5500
+
+## Fichiers
+
+- `index.html` : structure de l'interface (6 sections)
+- `styles.css` : design, typographie, responsive
+- `README.md` : documentation du frontend
 
 ## Pages représentées
 
@@ -15,17 +32,7 @@ Il sert à présenter une interface professionnelle destinée à rendre le proje
 - Audit logs
 - Monitoring
 
-## Lancement
-
-Ouvrir directement le fichier suivant dans un navigateur :
-
-```text
-frontend/index.html
-```
-
-Aucun serveur frontend n'est nécessaire.
-
-## Rôle dans la V3
+## Rôle dans la V3 / V4
 
 Cette interface complète la partie backend et DevSecOps :
 
@@ -46,3 +53,7 @@ Une future version pourrait ajouter :
 - appels API vers `/access-requests` ;
 - affichage dynamique des audits ;
 - intégration complète React ou Vue.js.
+
+## Contribution V4
+
+La V4 apporte des améliorations de design, de lisibilité, d'ergonomie et de responsive design.

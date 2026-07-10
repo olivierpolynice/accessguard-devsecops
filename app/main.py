@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
-from prometheus_fastapi_instrumentator import Instrumentator
+
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.auth import router as auth_router
 from app.database import (
@@ -29,7 +31,7 @@ from app.schemas import (
 )
 from app.security import get_current_user, require_roles
 from app.seed import get_seed_resources
-from prometheus_fastapi_instrumentator import Instrumentator
+
 
 app = FastAPI(
     title="AccessGuard API",
@@ -40,14 +42,28 @@ app = FastAPI(
     version="0.2.0",
 )
 
+# CORS V4 : autorise le frontend React/Vite à appeler l'API FastAPI.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth_router)
 initialize_database()
-Instrumentator().instrument(app).expose(app)
 
-# Observabilité V3 : expose /metrics au format Prometheus (latence, nombre de
-# requêtes, codes de statut par endpoint). Le "instrument().expose()" ajoute
-# une route GET /metrics sans authentification, scrapée par Prometheus.
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", tags=["Monitoring"])
+# Observabilité V3/V4 : expose /metrics au format Prometheus.
+# Cette route est utilisée par Prometheus pour scraper l'API.
+Instrumentator(should_instrument_requests_inprogress=True).instrument(app).expose(
+    app,
+    endpoint="/metrics",
+    tags=["Monitoring"],
+)
 
 
 RESOURCES = get_seed_resources()
@@ -418,7 +434,3 @@ def list_audit_logs(
 ) -> list[AuditLog]:
     """Retourne le journal d'audit persistant."""
     return get_audit_logs_from_database()
-
-Instrumentator(should_instrument_requests_inprogress=True).instrument(app).expose(
-    app, endpoint="/metrics", tags=["Monitoring"]
-)

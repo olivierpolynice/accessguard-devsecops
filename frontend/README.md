@@ -8,8 +8,9 @@ Il sert à présenter une interface professionnelle destinée à rendre le proje
 
 ## Pages représentées
 
+- Login
 - Dashboard
-- Demandes d’accès
+- Demandes d'accès
 - Accès attribués
 - Audit logs
 - Monitoring
@@ -22,7 +23,7 @@ Ouvrir directement le fichier suivant dans un navigateur :
 frontend/index.html
 ```
 
-Aucun serveur frontend n’est nécessaire.
+Aucun serveur frontend n'est nécessaire.
 
 ## Rôle dans la V3
 
@@ -37,7 +38,7 @@ Cette interface complète la partie backend et DevSecOps :
 
 ## Limites
 
-Ce prototype est statique. Il n’est pas encore connecté à l’API FastAPI.
+Ce prototype est statique. Il n'est pas encore connecté à l'API FastAPI.
 
 Une future version pourrait ajouter :
 

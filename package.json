@@ -1,0 +1,24 @@
+{
+  "name": "accessguard-devsecops",
+  "version": "1.0.0",
+  "description": "AccessGuard est une application pédagogique développée pour l’entreprise fictive **AsteriaTech**.",
+  "homepage": "https://github.com/olivierpolynice/accessguard-devsecops#readme",
+  "bugs": {
+    "url": "https://github.com/olivierpolynice/accessguard-devsecops/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olivierpolynice/accessguard-devsecops.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

@@ -1,0 +1,38 @@
+name: AccessGuard CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+  pull_request:
+
+jobs:
+  tests-quality-security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pytest
+        run: |
+          python -m pytest -v
+
+      - name: Check docker compose config
+        run: |
+          if [ -f docker-compose.yml ]; then
+            docker compose config
+          else
+            echo "No docker-compose.yml found, skipping Docker Compose validation."
+          fi

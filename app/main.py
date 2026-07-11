@@ -58,8 +58,10 @@ app.include_router(auth_router)
 initialize_database()
 
 # Observabilité V3/V4 : expose /metrics au format Prometheus.
-# Cette route est utilisée par Prometheus pour scraper l'API.
-Instrumentator(should_instrument_requests_inprogress=True).instrument(app).expose(
+# Un seul Instrumentator est utilisé afin d'éviter le doublon du middleware.
+Instrumentator(
+    should_instrument_requests_inprogress=True
+).instrument(app).expose(
     app,
     endpoint="/metrics",
     tags=["Monitoring"],
@@ -73,14 +75,24 @@ ACCESS_REQUESTS: list[AccessRequest] = []
 ACCESS_GRANTS: list[AccessGrant] = []
 AUDIT_LOGS: list[AuditLog] = []
 
+# Statuts valides pour la route de filtrage des demandes.
+VALID_ACCESS_REQUEST_STATUSES = {
+    "PENDING_MANAGER",
+    "APPROVED",
+    "REFUSED",
+    "GRANTED",
+}
+
 
 def remember(items: list, item: object) -> None:
     """Met à jour le cache mémoire utilisé par les tests."""
     item_id = getattr(item, "id")
+
     for index, existing_item in enumerate(items):
         if getattr(existing_item, "id") == item_id:
             items[index] = item
             return
+
     items.append(item)
 
 
@@ -162,6 +174,130 @@ def health_check() -> dict[str, str]:
 def list_resources() -> list[Resource]:
     """Retourne le catalogue des ressources internes actives."""
     return [resource for resource in RESOURCES if resource.is_active]
+
+
+# ---------------------------------------------------------------------------
+# Routes V4 utiles au frontend
+# ---------------------------------------------------------------------------
+
+
+@app.get("/me", tags=["Information"])
+def get_me(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> dict[str, str]:
+    """Retourne l'identité et le rôle de l'utilisateur connecté."""
+    return {
+        "email": current_user["email"],
+        "role": current_user["role"],
+    }
+
+
+@app.get("/dashboard/summary", tags=["Dashboard"])
+def get_dashboard_summary(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> dict[str, int]:
+    """Retourne les compteurs utilisés par le tableau de bord."""
+    is_employee = current_user["role"] == "employee"
+    scope_email = current_user["email"] if is_employee else None
+
+    access_requests = get_access_requests_from_database(scope_email)
+    access_grants = get_access_grants_from_database(scope_email)
+
+    pending_requests = sum(
+        1
+        for request in access_requests
+        if request.status == "PENDING_MANAGER"
+    )
+
+    active_grants = sum(
+        1
+        for grant in access_grants
+        if grant.status == "ACTIVE"
+    )
+
+    revoked_grants = sum(
+        1
+        for grant in access_grants
+        if grant.status == "REVOKED"
+    )
+
+    audit_logs_count = len(get_audit_logs_from_database())
+
+    return {
+        "pending_requests": pending_requests,
+        "active_grants": active_grants,
+        "revoked_grants": revoked_grants,
+        "audit_logs": audit_logs_count,
+    }
+
+
+@app.get(
+    "/access-requests/status/{request_status}",
+    response_model=list[AccessRequest],
+    tags=["Access Requests"],
+)
+def list_access_requests_by_status(
+    request_status: str,
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> list[AccessRequest]:
+    """Retourne les demandes filtrées selon leur statut."""
+    normalized_status = request_status.strip().upper()
+
+    if normalized_status not in VALID_ACCESS_REQUEST_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Statut inconnu. Valeurs acceptées : "
+                + ", ".join(sorted(VALID_ACCESS_REQUEST_STATUSES))
+            ),
+        )
+
+    if current_user["role"] == "employee":
+        access_requests = get_access_requests_from_database(
+            current_user["email"]
+        )
+    else:
+        access_requests = get_access_requests_from_database()
+
+    return [
+        request
+        for request in access_requests
+        if request.status == normalized_status
+    ]
+
+
+@app.get(
+    "/access-grants/active",
+    response_model=list[AccessGrant],
+    tags=["Access Grants"],
+)
+def list_active_access_grants(
+    current_user: dict[str, str] = Depends(get_current_user),
+) -> list[AccessGrant]:
+    """Retourne les accès actifs visibles selon le rôle du JWT."""
+    if current_user["role"] == "manager":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Le rôle manager ne peut pas consulter les accès attribués.",
+        )
+
+    if current_user["role"] == "employee":
+        access_grants = get_access_grants_from_database(
+            current_user["email"]
+        )
+    else:
+        access_grants = get_access_grants_from_database()
+
+    return [
+        grant
+        for grant in access_grants
+        if grant.status == "ACTIVE"
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Routes métier existantes
+# ---------------------------------------------------------------------------
 
 
 @app.post(
@@ -277,7 +413,10 @@ def manager_decision(
             ),
         )
 
-    updated_request = update_access_request_status(request_id, payload.decision)
+    updated_request = update_access_request_status(
+        request_id,
+        payload.decision,
+    )
 
     if updated_request is None:
         raise HTTPException(
@@ -343,7 +482,11 @@ def grant_access(
     access_grant = save_access_grant(draft_grant)
     remember(ACCESS_GRANTS, access_grant)
 
-    updated_request = update_access_request_status(access_request.id, "GRANTED")
+    updated_request = update_access_request_status(
+        access_request.id,
+        "GRANTED",
+    )
+
     if updated_request is not None:
         remember(ACCESS_REQUESTS, updated_request)
 
@@ -401,7 +544,11 @@ def revoke_access(
         )
 
     revoked_at = datetime.now(timezone.utc)
-    updated_grant = revoke_access_grant(grant_id, revoked_at.isoformat())
+
+    updated_grant = revoke_access_grant(
+        grant_id,
+        revoked_at.isoformat(),
+    )
 
     if updated_grant is None:
         raise HTTPException(

@@ -1,59 +1,129 @@
 # Frontend AccessGuard
 
-## Lancement avec Live Server
+Interface utilisateur React/Vite pour AccessGuard, connectée à l’API FastAPI.
 
-1. Ouvrir le projet dans VS Code.
-2. Installer l'extension Live Server.
-3. Ouvrir `index.html`.
-4. Cliquer sur « Open with Live Server ».
+## Fonctionnalités
 
-## Lancement avec Python sur Mac
+Le frontend permet notamment :
 
-Depuis le dossier `frontend` :
+- la connexion avec les comptes de démonstration ;
+- l’identification du rôle de l’utilisateur ;
+- l’affichage des ressources disponibles ;
+- la création de demandes d’accès ;
+- la consultation des demandes ;
+- la validation ou le refus côté Manager ;
+- l’attribution et la révocation des accès côté IT Admin ;
+- la consultation des journaux d’audit ;
+- l’affichage d’un tableau de bord adapté au rôle.
+
+## Technologies
+
+- React
+- Vite
+- JavaScript
+- CSS
+- API REST FastAPI
+- authentification JWT
+- contrôle d’accès RBAC
+
+## Installation
+
+Depuis la racine du projet :
 
 ```bash
-python3 -m http.server 5500
-```
+cd frontend
+npm install
 
-Puis ouvrir : http://localhost:5500
 
-## Fichiers
+Lancement
+npm run dev
 
-- `index.html` : structure de l'interface (6 sections)
-- `styles.css` : design, typographie, responsive
-- `README.md` : documentation du frontend
+L’application est généralement disponible à l’adresse :
 
-## Pages représentées
+http://localhost:5173
 
-- Login
-- Dashboard
-- Demandes d'accès
-- Accès attribués
-- Audit logs
-- Monitoring
+Le backend FastAPI doit être lancé séparément sur :
 
-## Rôle dans la V3 / V4
+http://127.0.0.1:8000
+Comptes de démonstration
 
-Cette interface complète la partie backend et DevSecOps :
+Mot de passe commun :
 
-- API FastAPI
-- JWT / RBAC
-- SQLite
-- Docker
-- Prometheus
-- Grafana
+AccessGuard123!
+Employee
+alice.employee@asteriatech.local
+Manager
+marc.manager@asteriatech.local
+IT Admin
+ines.itadmin@asteriatech.local
+Security Admin
+paul.security@asteriatech.local
+Rôles
+Employee
+consulter les ressources ;
+créer une demande d’accès ;
+consulter ses propres demandes ;
+consulter ses propres accès.
+Manager
+consulter les demandes ;
+approuver ou refuser les demandes en attente.
+IT Admin
+consulter les demandes approuvées ;
+attribuer les accès ;
+consulter les accès actifs ;
+révoquer les accès ;
+consulter les journaux d’audit selon les règles définies.
+Security Admin
+consulter les journaux d’audit ;
+consulter les événements sensibles ;
+révoquer un accès lorsque cette permission est autorisée.
+Principales routes utilisées
+POST /auth/login
+GET /me
+GET /resources
+GET /dashboard/summary
+POST /access-requests
+GET /access-requests
+GET /access-requests/status/{status}
+POST /access-requests/{id}/manager-decision
+POST /access-requests/{id}/grant
+GET /access-grants
+GET /access-grants/active
+POST /access-grants/{id}/revoke
+GET /audit-logs
+Structure principale
+frontend/
+├── public/
+├── src/
+│   ├── assets/
+│   ├── App.jsx
+│   ├── App.css
+│   ├── index.css
+│   └── main.jsx
+├── package.json
+├── package-lock.json
+├── vite.config.js
+└── README.md
+Contribution UI/UX V4
 
-## Limites
+La V4 améliore notamment :
 
-Ce prototype est statique. Il n'est pas encore connecté à l'API FastAPI.
+la lisibilité ;
+l’ergonomie ;
+la navigation ;
+l’organisation des écrans ;
+le responsive design ;
+la cohérence visuelle entre les rôles ;
+la documentation utilisateur.
+Limites actuelles
 
-Une future version pourrait ajouter :
+Le projet utilise encore des comptes de démonstration définis dans le backend.
 
-- connexion réelle avec `/auth/login` ;
-- appels API vers `/access-requests` ;
-- affichage dynamique des audits ;
-- intégration complète React ou Vue.js.
+Pour une version de production, il faudrait notamment :
 
-## Contribution V4
-
-La V4 apporte des améliorations de design, de lisibilité, d'ergonomie et de responsive design.
+utiliser une base utilisateurs persistante ;
+protéger davantage le stockage du token ;
+configurer les URLs de l’API avec des variables d’environnement ;
+ajouter une gestion centralisée des erreurs ;
+compléter les tests automatisés du frontend ;
+améliorer l’accessibilité.

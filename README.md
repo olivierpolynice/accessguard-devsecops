@@ -1,437 +1,454 @@
-# AccessGuard DevSecOps
+# AccessGuard
 
-API pédagogique de gestion et de gouvernance des accès internes pour l’entreprise fictive **AsteriaTech**.
+AccessGuard est une application pédagogique de gestion et de gouvernance des accès internes pour l’entreprise fictive **AsteriaTech**.
 
-AccessGuard met en œuvre un workflow de demande d’accès à une ressource interne, avec authentification JWT, contrôle d’accès basé sur les rôles (RBAC), journalisation des actions sensibles et tests automatisés.
+L’application permet de simuler le cycle complet d’une demande d’accès :
 
-> **État du projet : V2 — JWT/RBAC et contrôles de sécurité validés**
+1. un employé crée une demande ;
+2. un manager approuve ou refuse la demande ;
+3. un administrateur IT attribue techniquement l’accès ;
+4. un administrateur sécurité consulte et contrôle les opérations.
 
 ---
 
 ## Objectifs du projet
 
-Le projet permet de démontrer les principes suivants :
+AccessGuard permet de mettre en pratique plusieurs notions :
 
-- authentification par JWT ;
-- contrôle d’accès par rôles (RBAC) ;
-- gestion d’une demande d’accès de bout en bout ;
-- validation par un manager ;
-- attribution et révocation d’un accès par les rôles autorisés ;
-- journalisation des actions sensibles ;
-- tests automatisés avec Pytest ;
-- intégration continue avec GitHub Actions.
-
----
-
-## Workflow fonctionnel
-
-1. Un **employee** s’authentifie et crée une demande d’accès à une ressource.
-2. Un **manager** approuve ou refuse la demande.
-3. Un **it_admin** attribue l’accès après approbation.
-4. Un **it_admin** ou un **security_admin** peut révoquer un accès actif.
-5. Les actions sensibles sont enregistrées dans les logs d’audit.
-6. Les logs d’audit sont réservés aux rôles autorisés.
-
----
-
-## Architecture du projet
-
-```text
-accessguard-devsecops/
-├── .github/
-│   └── workflows/
-│       └── test.yml
-├── app/
-│   ├── auth.py
-│   ├── dependencies.py
-│   ├── main.py
-│   ├── schemas.py
-│   ├── security.py
-│   └── seed.py
-├── docs/
-│   ├── screenshots/
-│   │   └── rendu-07/
-│   ├── V2_PLAN.md
-│   └── V2_RBAC_MATRIX.md
-├── tests/
-│   ├── test_accessguard.py
-│   ├── test_auth.py
-│   └── test_security.py
-├── .env.example
-├── .gitignore
-├── README.md
-└── requirements.txt
-```
+- authentification sécurisée ;
+- gestion des rôles ;
+- contrôle d’accès basé sur les rôles, ou RBAC ;
+- création et validation des demandes d’accès ;
+- attribution et révocation des accès ;
+- journalisation des actions ;
+- séparation des responsabilités ;
+- gouvernance des identités et des accès.
 
 ---
 
 ## Technologies utilisées
 
-| Domaine | Technologies |
-|---|---|
-| API | Python, FastAPI |
-| Validation des données | Pydantic |
-| Authentification | JWT / PyJWT |
-| Hachage des mots de passe | bcrypt |
-| Tests | Pytest, FastAPI TestClient |
-| CI | GitHub Actions |
-| Documentation API | Swagger / OpenAPI |
+### Backend
+
+- Python
+- FastAPI
+- Pydantic
+- JWT
+- Uvicorn
+
+### Frontend
+
+- React
+- Vite
+- JavaScript
+- CSS
+- API Fetch
+
+### Outils
+
+- Visual Studio Code
+- Git
+- GitHub
+- Swagger UI
 
 ---
 
-## Installation locale
+## Structure générale
 
-### Prérequis
+```text
+AccessGuard/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── auth.py
+│   │   ├── security.py
+│   │   ├── schemas.py
+│   │   └── seed.py
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   └── main.jsx
+│   └── package.json
+│
+└── README.md
+La structure exacte peut évoluer au cours du projet.
 
-- Python 3.11 ou version compatible ;
-- Git ;
-- Visual Studio Code recommandé ;
-- un environnement virtuel Python.
+Rôles disponibles
 
-### 1. Cloner le dépôt
+L’application contient quatre rôles principaux.
 
-```powershell
-git clone https://github.com/olivierpolynice/accessguard-devsecops.git
-cd accessguard-devsecops
-```
+Employee
 
-### 2. Créer et activer l’environnement virtuel
+L’employé peut :
 
-Sous PowerShell :
+se connecter ;
+consulter les ressources disponibles ;
+créer une demande d’accès ;
+renseigner une justification ;
+sélectionner une période ;
+consulter le statut de ses demandes ;
+consulter ses accès attribués.
+Manager
 
-```powershell
+Le manager peut :
+
+consulter les demandes en attente ;
+approuver une demande ;
+refuser une demande ;
+ajouter un commentaire de décision ;
+consulter les demandes déjà traitées.
+IT Admin
+
+L’administrateur IT peut :
+
+consulter les demandes approuvées ;
+attribuer techniquement un accès ;
+ajouter un commentaire d’attribution ;
+consulter les accès déjà attribués ;
+révoquer un accès lorsque cette fonction est disponible.
+Security Admin
+
+L’administrateur sécurité peut :
+
+consulter les demandes ;
+consulter les accès attribués ;
+consulter les journaux d’audit ;
+contrôler les actions réalisées dans l’application ;
+vérifier la cohérence des autorisations.
+Comptes de démonstration
+
+Ces comptes sont prévus uniquement pour l’environnement pédagogique local.
+
+Tous les comptes utilisent le même mot de passe de démonstration :
+
+AccessGuard123!
+Utilisateur	Adresse e-mail	Mot de passe	Rôle
+Alice Employee	alice.employee@asteriatech.local	AccessGuard123!	employee
+Marc Manager	marc.manager@asteriatech.local	AccessGuard123!	manager
+Inès IT Admin	ines.itadmin@asteriatech.local	AccessGuard123!	it_admin
+Paul Security	paul.security@asteriatech.local	AccessGuard123!	security_admin
+
+Le mot de passe est sensible à la casse. Il faut saisir exactement :
+
+AccessGuard123!
+Configuration des comptes dans le backend
+
+Dans le backend, le mot de passe commun est défini avec une constante :
+
+from typing import Final
+
+DEMO_PASSWORD: Final[str] = "AccessGuard123!"
+
+Les comptes utilisent ensuite le mot de passe haché :
+
+DEMO_USERS: Final[dict[str, dict[str, str]]] = {
+    "alice.employee@asteriatech.local": {
+        "email": "alice.employee@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
+        "role": "employee",
+    },
+    "marc.manager@asteriatech.local": {
+        "email": "marc.manager@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
+        "role": "manager",
+    },
+    "ines.itadmin@asteriatech.local": {
+        "email": "ines.itadmin@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
+        "role": "it_admin",
+    },
+    "paul.security@asteriatech.local": {
+        "email": "paul.security@asteriatech.local",
+        "password_hash": hash_password(DEMO_PASSWORD),
+        "role": "security_admin",
+    },
+}
+Installation du backend
+
+Ouvrir un terminal dans le dossier du backend :
+
+cd backend
+
+Créer un environnement virtuel :
+
 python -m venv .venv
+
+Activer l’environnement virtuel sous Windows :
+
 .\.venv\Scripts\Activate.ps1
-```
 
-### 3. Installer les dépendances
+Installer les dépendances :
 
-```powershell
-python -m pip install --upgrade pip
-python -m pip install -r app/requirements.txt
-```
+pip install -r requirements.txt
 
-Si le fichier `requirements.txt` est placé à la racine du dépôt, utilisez plutôt :
+Démarrer le serveur FastAPI :
 
-```powershell
-python -m pip install -r requirements.txt
-```
+uvicorn app.main:app --reload
 
-### 4. Lancer l’API
+Le backend est normalement accessible à l’adresse suivante :
 
-```powershell
-python -m uvicorn app.main:app --reload
-```
-
-L’API est ensuite disponible sur :
-
-```text
 http://127.0.0.1:8000
-```
 
-La documentation Swagger est disponible sur :
+La documentation Swagger est accessible ici :
 
-```text
 http://127.0.0.1:8000/docs
-```
+Installation du frontend
 
----
+Ouvrir un deuxième terminal :
 
-## Authentification JWT
+cd frontend
 
-La connexion est réalisée via :
+Installer les dépendances :
 
-```text
+npm install
+
+Démarrer l’application React :
+
+npm run dev
+
+Le frontend est normalement accessible à l’adresse suivante :
+
+http://localhost:5173
+Test de l’authentification avec Swagger
+
+Ouvrir :
+
+http://127.0.0.1:8000/docs
+
+Sélectionner la route :
+
 POST /auth/login
-```
 
-Exemple de body :
+Cliquer sur Try it out puis utiliser, par exemple, le compte IT Admin :
 
-```json
 {
-  "email": "alice.employee@asteriatech.local",
-  "password": "Employee123!"
+  "email": "ines.itadmin@asteriatech.local",
+  "password": "AccessGuard123!"
 }
-```
 
-La réponse contient :
+Une réponse avec le code 200 indique que l’authentification fonctionne.
 
-```json
-{
-  "access_token": "eyJ...",
-  "token_type": "bearer",
-  "role": "employee"
-}
-```
+Une réponse 401 Unauthorized indique que :
 
-Le token est ensuite transmis dans l’en-tête HTTP :
+l’adresse e-mail est incorrecte ;
+le mot de passe est incorrect ;
+le compte n’est pas présent dans DEMO_USERS ;
+le backend n’a pas été redémarré après une modification.
+Workflow d’une demande d’accès
+Étape 1 — Création de la demande
+
+Alice se connecte avec le rôle employee.
+
+Elle sélectionne une ressource, indique une justification et choisit une période.
+
+La demande est créée avec un statut similaire à :
+
+PENDING
+Étape 2 — Décision du manager
+
+Marc se connecte avec le rôle manager.
+
+Il consulte la demande puis peut :
+
+l’approuver ;
+la refuser ;
+ajouter un commentaire.
+
+Une demande approuvée reçoit le statut :
+
+APPROVED
+Étape 3 — Attribution par l’IT
+
+Inès se connecte avec le rôle it_admin.
+
+Elle consulte les demandes approuvées, ajoute un commentaire et clique sur :
+
+Attribuer l’accès
+
+L’accès apparaît ensuite dans la section :
+
+Accès attribués
+Étape 4 — Contrôle de sécurité
+
+Paul se connecte avec le rôle security_admin.
+
+Il peut consulter les opérations et les journaux d’audit afin de vérifier :
+
+qui a demandé l’accès ;
+qui a approuvé la demande ;
+qui a attribué l’accès ;
+à quelle date l’action a été réalisée ;
+quelle ressource a été concernée.
+Exemples de ressources
+
+Les ressources peuvent notamment représenter :
+
+un VPN d’entreprise ;
+une base de données ;
+un dépôt Git ;
+une application interne ;
+un espace documentaire ;
+une console cloud ;
+un serveur d’administration.
+
+Exemple :
+
+VPN Entreprise
+Statuts possibles
+
+Selon l’implémentation du projet, une demande peut utiliser les statuts suivants :
+
+PENDING
+APPROVED
+REJECTED
+GRANTED
+REVOKED
+
+Signification :
+
+PENDING : demande en attente de décision ;
+APPROVED : demande approuvée par le manager ;
+REJECTED : demande refusée ;
+GRANTED : accès attribué par l’administrateur IT ;
+REVOKED : accès retiré.
+Sécurité
+
+Le projet utilise plusieurs mécanismes de sécurité :
+
+hachage des mots de passe ;
+authentification par jeton JWT ;
+contrôle des rôles ;
+vérification des autorisations ;
+séparation des responsabilités ;
+validation des données avec Pydantic ;
+journalisation des opérations.
+
+Le mot de passe commun AccessGuard123! est utilisé uniquement pour simplifier les démonstrations locales.
+
+Il ne doit jamais être utilisé dans un environnement de production.
+
+Dans une version de production, il faudrait notamment :
+
+utiliser une base de données ;
+utiliser un secret JWT stocké dans une variable d’environnement ;
+imposer des mots de passe individuels ;
+ajouter une politique de complexité ;
+activer une authentification multifacteur ;
+limiter les tentatives de connexion ;
+utiliser HTTPS ;
+gérer l’expiration et le renouvellement des jetons ;
+protéger les journaux d’audit ;
+mettre en place une gestion des secrets.
+Vérification des rôles
+
+Après la connexion, l’interface affiche l’utilisateur et son rôle.
+
+Exemple pour l’administrateur IT :
+
+Utilisateur : ines.itadmin@asteriatech.local
+Rôle : it_admin
+
+Exemple pour le manager :
+
+Utilisateur : marc.manager@asteriatech.local
+Rôle : manager
+Résolution des problèmes
+Erreur 401 lors de la connexion
+
+Vérifier que le mot de passe utilisé est :
+
+AccessGuard123!
+
+Vérifier également que le compte existe dans DEMO_USERS.
+
+Redémarrer le backend :
+
+Ctrl + C
+uvicorn app.main:app --reload
+Le frontend ne contacte pas le backend
+
+Vérifier que le backend fonctionne sur :
+
+http://127.0.0.1:8000
+
+Vérifier que l’URL de connexion utilisée dans React est correcte :
+
+http://127.0.0.1:8000/auth/login
+Erreur CORS
+
+Vérifier que FastAPI autorise le frontend :
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+Les modifications ne sont pas prises en compte
+
+Arrêter puis relancer le backend et le frontend.
+
+Backend :
+
+Ctrl + C
+uvicorn app.main:app --reload
+
+Frontend :
+
+Ctrl + C
+npm run dev
+Limites actuelles
+
+Cette version est destinée à une démonstration pédagogique.
+
+Certaines données peuvent être conservées uniquement en mémoire. Elles peuvent donc disparaître lors du redémarrage du backend.
+
+Les comptes de démonstration utilisent également un mot de passe commun afin de faciliter les tests.
+
+Améliorations prévues
+
+Les prochaines versions pourront inclure :
+
+une base de données PostgreSQL ;
+une interface graphique améliorée ;
+un tableau de bord par rôle ;
+des filtres et une recherche ;
+la révocation des accès ;
+l’expiration automatique des autorisations ;
+des notifications ;
+un historique complet ;
+des métriques Prometheus ;
+des tableaux de bord Grafana ;
+une conteneurisation Docker ;
+un déploiement automatisé ;
+Terraform ;
+une intégration continue avec GitHub Actions ;
+des tests automatisés ;
+une gestion centralisée des secrets.
+Avertissement
+
+AccessGuard est un projet pédagogique.
+
+Les utilisateurs, ressources, mots de passe et données présentés dans l’application sont fictifs.
+
+Aucun compte de démonstration ne doit être utilisé sur un service réel.
+
+Auteur
+
+Projet AccessGuard réalisé dans le cadre d’un projet pédagogique consacré à la cybersécurité, au cloud, au DevOps et à la gouvernance des accès.
+
+
+La correction principale est que les quatre comptes utilisent désormais tous :
 
 ```text
-Authorization: Bearer <access_token>
-```
+AccessGuard123!
 
-Dans Swagger, utiliser le bouton **Authorize**, coller le token JWT, puis valider.
+et que le compte sécurité correspond au code actuel :
 
----
-
-## Comptes de démonstration
-
-> Ces comptes sont prévus uniquement pour l’environnement pédagogique local.
-
-| Utilisateur | E-mail | Mot de passe | Rôle |
-|---|---|---|---|
-| Alice Employee | `alice.employee@asteriatech.local` | `Employee123!` | `employee` |
-| Marc Manager | `marc.manager@asteriatech.local` | `Manager123!` | `manager` |
-| Inès IT Admin | `ines.itadmin@asteriatech.local` | `Admin123!` | `it_admin` |
-| Sam Security | `sam.security@asteriatech.local` | `Security123!` | `security_admin` |
-
----
-
-## Matrice RBAC V2
-
-| Endpoint / action | employee | manager | it_admin | security_admin |
-|---|---:|---:|---:|---:|
-| `POST /auth/login` | Oui | Oui | Oui | Oui |
-| `GET /health` | Oui | Oui | Oui | Oui |
-| `GET /resources` | Oui | Oui | Oui | Oui |
-| `POST /access-requests` | Oui | Oui | Oui | Oui |
-| `GET /access-requests` | Ses demandes | Oui | Oui | Oui |
-| `GET /access-requests/{request_id}` | Ses demandes | Oui | Oui | Oui |
-| `POST /access-requests/{request_id}/manager-decision` | Non | Oui | Non | Non |
-| `POST /access-requests/{request_id}/grant` | Non | Non | Oui | Non |
-| `GET /access-grants` | Ses accès | Non | Oui | Oui |
-| `POST /access-grants/{grant_id}/revoke` | Non | Non | Oui | Oui |
-| `GET /audit-logs` | Non | Non | Oui | Oui |
-
-### Codes HTTP attendus
-
-| Situation | Résultat attendu |
-|---|---|
-| Token absent | `401 Unauthorized` |
-| Token invalide ou expiré | `401 Unauthorized` |
-| Token valide avec rôle insuffisant | `403 Forbidden` |
-| Token valide avec rôle autorisé | `200 OK` ou `201 Created` |
-| Ressource ou objet introuvable après authentification | `404 Not Found` |
-| Action incohérente avec l’état métier | `409 Conflict` |
-| Données invalides | `422 Unprocessable Content` |
-
----
-
-## Endpoints principaux
-
-### Authentification
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `POST` | `/auth/login` | Connexion et génération d’un token JWT |
-
-### Informations et ressources
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | Informations de base de l’API |
-| `GET` | `/health` | Vérification de disponibilité |
-| `GET` | `/resources` | Liste des ressources actives |
-
-### Demandes d’accès
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `POST` | `/access-requests` | Créer une demande d’accès |
-| `GET` | `/access-requests` | Lister les demandes selon le rôle |
-| `GET` | `/access-requests/{request_id}` | Consulter une demande |
-| `POST` | `/access-requests/{request_id}/manager-decision` | Approuver ou refuser une demande |
-
-### Accès attribués
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `POST` | `/access-requests/{request_id}/grant` | Attribuer un accès après approbation |
-| `GET` | `/access-grants` | Lister les accès attribués |
-| `POST` | `/access-grants/{grant_id}/revoke` | Révoquer un accès actif |
-
-### Audit
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/audit-logs` | Consulter les logs d’audit, réservé aux administrateurs |
-
----
-
-## Exemples de scénarios V2
-
-### 1. Tentative sans JWT
-
-```text
-GET /audit-logs
-```
-
-Résultat :
-
-```text
-401 Unauthorized
-```
-
-### 2. JWT valide mais rôle insuffisant
-
-Un utilisateur `employee` tente d’attribuer un accès :
-
-```text
-POST /access-requests/1/grant
-```
-
-Résultat :
-
-```text
-403 Forbidden
-```
-
-### 3. JWT valide et rôle autorisé
-
-Un utilisateur `it_admin` consulte les logs :
-
-```text
-GET /audit-logs
-```
-
-Résultat :
-
-```text
-200 OK
-```
-
-### 4. Workflow complet
-
-1. Connexion `employee`.
-2. Création d’une demande d’accès.
-3. Connexion `manager`.
-4. Approbation de la demande.
-5. Connexion `it_admin`.
-6. Attribution de l’accès.
-7. Révocation éventuelle par `it_admin` ou `security_admin`.
-8. Consultation des logs d’audit par un rôle autorisé.
-
----
-
-## Tests automatisés
-
-Exécuter les tests depuis la racine du projet :
-
-```powershell
-python -m pytest -v
-```
-
-Résultat de validation V2 :
-
-```text
-31 passed
-```
-
-Les tests couvrent notamment :
-
-- génération de token JWT ;
-- authentification ;
-- accès sans token (`401`) ;
-- accès avec mauvais rôle (`403`) ;
-- création de demandes ;
-- validation manager ;
-- attribution d’accès ;
-- révocation d’accès ;
-- logs d’audit ;
-- erreurs `404`, `409` et `422`.
-
-> Un avertissement lié à `TestClient` / `httpx` peut apparaître. Il n’empêche pas l’exécution ni la réussite des tests.
-
----
-
-## Intégration continue
-
-Le dépôt contient un workflow GitHub Actions qui exécute les tests automatiquement :
-
-- à chaque `push` sur `main` ;
-- à chaque `push` sur une branche `feature/**` ;
-- à chaque Pull Request vers `main`.
-
-Avant toute fusion dans `main`, vérifier :
-
-1. que les tests locaux passent ;
-2. que les checks GitHub Actions sont verts ;
-3. que la Pull Request ne contient aucun secret ;
-4. que la documentation et les captures sont ajoutées si nécessaire.
-
----
-
-## Preuves et captures V2
-
-Les captures de validation sont stockées dans :
-
-```text
-docs/screenshots/rendu-07/
-```
-
-Exemples de preuves attendues :
-
-| Capture | Preuve |
-|---|---|
-| `Capture-V2-02-Tests-automatises-JWT-RBAC-reussis.png` | Tests Pytest réussis |
-| `Capture-V2-03-Audit-logs-sans-JWT-401.png` | Audit refusé sans JWT |
-| `Capture-V2-04-Audit-logs-role-employee-403.png` | Audit refusé pour le rôle employee |
-| `Capture-V2-05-Audit-logs-it-admin-200.png` | Audit autorisé pour it_admin |
-| `Capture-V2-06-Grant-sans-JWT-401.png` | Attribution refusée sans JWT |
-| `Capture-V2-07-Grant-role-employee-403.png` | Attribution refusée pour employee |
-| `Capture-V2-08-Creation-demande-access-employee-201.png` | Création d’une demande |
-| `Capture-V2-09-Decision-manager-approved-200.png` | Approbation manager |
-| `Capture-V2-10-Attribution-acces-it-admin-201.png` | Attribution par it_admin |
-| `Capture-V2-11-Revocation-acces-it-admin-200.png` | Révocation d’un accès |
-| `Capture-V2-12-Audit-logs-workflow-200.png` | Consultation des logs après le workflow |
-
----
-
-## Sécurité
-
-Les règles de sécurité appliquées dans la V2 sont les suivantes :
-
-- aucune route sensible ne doit être accessible sans token JWT ;
-- les rôles sont extraits depuis le token, pas depuis le body de la requête ;
-- les actions sensibles sont contrôlées avec RBAC ;
-- les opérations sensibles génèrent une trace d’audit ;
-- les mots de passe sont hachés avec bcrypt ;
-- les secrets sont lus depuis l’environnement avec une valeur locale de démonstration ;
-- aucun token JWT complet ne doit être enregistré dans les logs ;
-- les modifications passent par des branches et Pull Requests.
-
----
-
-## Limites actuelles
-
-Cette version reste une API pédagogique locale :
-
-- les données sont conservées en mémoire ;
-- un redémarrage de l’API réinitialise les demandes, accès et audits ;
-- aucune base de données persistante n’est encore utilisée ;
-- aucune interface front-end n’est implémentée ;
-- aucun déploiement cloud n’est inclus dans cette V2.
-
----
-
-## Évolutions possibles — V3
-
-Les améliorations suivantes pourront être ajoutées dans une V3 :
-
-- persistance SQLite ou PostgreSQL ;
-- Dockerfile et Docker Compose ;
-- gestion de migrations ;
-- dashboard Prometheus / Grafana ;
-- journalisation structurée ;
-- gestion de secrets via Vault ou variables CI ;
-- scan de sécurité des dépendances ;
-- déploiement cloud ;
-- interface front-end ;
-- intégration LDAP, Active Directory ou Azure Entra ID.
-
----
-
-## Auteur
-
-**Olivier Polynice**  
-Projet pédagogique Master Réseaux, Cybersécurité & Cloud.
+paul.security@asteriatech.local

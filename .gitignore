@@ -32,6 +32,7 @@ Thumbs.db
 postgres_data/
 grafana_data/
 prometheus_data/
+volumes/
 
 # Rapports générés
 reports/
@@ -41,3 +42,6 @@ accessguard.db
 *.db-journal
 *.db-wal
 *.db-shm
+# Azurite local emulator
+__azurite_db_*.json
+AzuriteConfig/

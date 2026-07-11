@@ -8,7 +8,7 @@ APP_DIRECTORY = PROJECT_ROOT / "app"
 
 sys.path.insert(0, str(APP_DIRECTORY))
 
-from main import ACCESS_GRANTS, ACCESS_REQUESTS, AUDIT_LOGS, app  # noqa: E402
+from app.main import ACCESS_GRANTS, ACCESS_REQUESTS, AUDIT_LOGS, app  # noqa: E402
 from app.database import clear_database  # noqa: E402
 from app.security import create_access_token  # noqa: E402
 

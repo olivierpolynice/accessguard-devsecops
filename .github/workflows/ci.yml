@@ -41,9 +41,10 @@ jobs:
 
       - name: Lancer tous les tests Pytest
         env:
-          ACCESSGUARD_SECRET_KEY: ci-v5-test-secret-not-for-production
+          ACCESSGUARD_SECRET_KEY: ci-v5-test-key-not-for-production
           ACCESSGUARD_TOKEN_EXPIRE_MINUTES: "60"
         run: |
+          mkdir -p reports
           python -m pytest -v --junitxml=reports/pytest-v5.xml
 
       - name: Lancer le lint Python
@@ -77,7 +78,7 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Le frontend V5 ne possède pas encore package.json et package-lock.json."
+            echo "::error::Le frontend V5 ne possède pas package.json ou package-lock.json."
           fi
 
       - name: Installer Node.js
@@ -205,12 +206,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git grep -n -I -E \
-            '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|AWS_SECRET_ACCESS_KEY=|ACCESSGUARD_SECRET_KEY=[^$])' \
-            -- \
-            ':!.env.example' \
-            ':!docs/**'; then
-            echo "::error::Un secret potentiel a été trouvé."
+          pattern='BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|AWS_SECRET_ACCESS_KEY=|ACCESSGUARD_SECRET_KEY='
+
+          matches="$(
+            git grep -n -I -E "$pattern" \
+              -- \
+              ':!.env.example' \
+              ':!docs/**' \
+              ':!.github/workflows/ci.yml' \
+              || true
+          )"
+
+          if [ -n "$matches" ]; then
+            echo "::error::Un secret potentiel a été trouvé :"
+            echo "$matches"
             exit 1
           fi
 
@@ -246,21 +255,30 @@ jobs:
       - name: Vérifier tous les jobs obligatoires
         shell: bash
         run: |
-          results='${{ toJSON(needs) }}'
-          echo "$results"
+          backend_result="${{ needs.backend.result }}"
+          frontend_result="${{ needs.frontend.result }}"
+          python_security_result="${{ needs.python-security.result }}"
+          frontend_security_result="${{ needs.frontend-security.result }}"
+          secrets_result="${{ needs.secrets.result }}"
+          sensitive_files_result="${{ needs.sensitive-files.result }}"
+          docker_result="${{ needs.docker-compose.result }}"
 
-          if echo "$results" | grep -q '"result": "failure"'; then
+          echo "Backend : $backend_result"
+          echo "Frontend : $frontend_result"
+          echo "pip-audit : $python_security_result"
+          echo "npm audit : $frontend_security_result"
+          echo "Gitleaks : $secrets_result"
+          echo "Fichiers sensibles : $sensitive_files_result"
+          echo "Docker Compose : $docker_result"
+
+          if [ "$backend_result" != "success" ] || \
+             [ "$frontend_result" != "success" ] || \
+             [ "$python_security_result" != "success" ] || \
+             [ "$frontend_security_result" != "success" ] || \
+             [ "$secrets_result" != "success" ] || \
+             [ "$sensitive_files_result" != "success" ] || \
+             [ "$docker_result" != "success" ]; then
             echo "::error::Au moins un contrôle obligatoire V5 a échoué."
-            exit 1
-          fi
-
-          if echo "$results" | grep -q '"result": "cancelled"'; then
-            echo "::error::Au moins un contrôle obligatoire V5 a été annulé."
-            exit 1
-          fi
-
-          if echo "$results" | grep -q '"result": "skipped"'; then
-            echo "::error::Au moins un contrôle obligatoire V5 a été ignoré."
             exit 1
           fi
 

@@ -245,7 +245,7 @@ def list_access_requests_by_status(
 
     if normalized_status not in VALID_ACCESS_REQUEST_STATUSES:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=(
                 "Statut inconnu. Valeurs acceptées : "
                 + ", ".join(sorted(VALID_ACCESS_REQUEST_STATUSES))

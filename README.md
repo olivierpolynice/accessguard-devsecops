@@ -1,182 +1,188 @@
-# AccessGuard
+1. README.md
+AccessGuard
 
-AccessGuard est une application pédagogique de gestion et de gouvernance des accès internes pour l’entreprise fictive **AsteriaTech**.
+AccessGuard est une application pédagogique de gestion et de gouvernance des accès internes pour l’entreprise fictive AsteriaTech.
 
-L’application permet de simuler le cycle complet d’une demande d’accès :
+Le projet permet de gérer :
 
-1. un employé crée une demande ;
-2. un manager approuve ou refuse la demande ;
-3. un administrateur IT attribue techniquement l’accès ;
-4. un administrateur sécurité consulte et contrôle les opérations.
+l’authentification des utilisateurs ;
+les rôles et autorisations RBAC ;
+les demandes d’accès ;
+la validation par un manager ;
+l’attribution et la révocation des accès ;
+les journaux d’audit ;
+la supervision avec Prometheus et Grafana ;
+l’administration des utilisateurs depuis la version V5.
+Technologies utilisées
+Backend
+Python 3.12
+FastAPI
+SQLite
+Pydantic
+JWT
+Passlib / bcrypt
+Pytest
+Frontend
+HTML
+CSS
+JavaScript
+DevOps et supervision
+Docker
+Docker Compose
+GitHub Actions
+Prometheus
+Grafana
+Lancer le projet
+Prérequis
 
----
+Installer les outils suivants :
 
-## Objectifs du projet
+Git
+Docker Desktop
+Docker Compose
+1. Cloner le dépôt
+git clone <URL_DU_DEPOT>
+cd accessguard-devsecops
+2. Créer le fichier d’environnement
 
-AccessGuard permet de mettre en pratique plusieurs notions :
+Créer un fichier .env à la racine du projet si celui-ci n’existe pas.
 
-- authentification sécurisée ;
-- gestion des rôles ;
-- contrôle d’accès basé sur les rôles, ou RBAC ;
-- création et validation des demandes d’accès ;
-- attribution et révocation des accès ;
-- journalisation des actions ;
-- séparation des responsabilités ;
-- gouvernance des identités et des accès.
+Exemple :
 
----
+SECRET_KEY=accessguard-secret-key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+DATABASE_URL=sqlite:///./data/accessguard.db
 
-## Technologies utilisées
+Ne pas utiliser cette clé secrète en production.
 
-### Backend
+3. Démarrer les services
+docker compose up --build
 
-- Python
-- FastAPI
-- Pydantic
-- JWT
-- Uvicorn
+Pour lancer les services en arrière-plan :
 
-### Frontend
+docker compose up --build -d
+4. Vérifier les conteneurs
+docker compose ps
+5. Accéder aux services
+Service	Adresse
+API AccessGuard	http://localhost:8000
+Documentation Swagger	http://localhost:8000/docs
+Documentation ReDoc	http://localhost:8000/redoc
+Métriques Prometheus	http://localhost:8000/metrics
+Prometheus	http://localhost:9090
+Grafana	http://localhost:3000
+Arrêter le projet
+docker compose down
 
-- React
-- Vite
-- JavaScript
-- CSS
-- API Fetch
+Pour supprimer également les volumes :
 
-### Outils
+docker compose down -v
 
-- Visual Studio Code
-- Git
-- GitHub
-- Swagger UI
+Attention : la suppression des volumes peut supprimer les données SQLite persistantes.
 
----
+Comptes de test
 
-## Structure générale
+Les comptes suivants sont créés automatiquement par le script de seed.
 
-```text
-AccessGuard/
-├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── auth.py
-│   │   ├── security.py
-│   │   ├── schemas.py
-│   │   └── seed.py
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   └── main.jsx
-│   └── package.json
-│
-└── README.md
-La structure exacte peut évoluer au cours du projet.
+Rôle	Adresse email	Mot de passe
+Employee	alice.employee@asteriatech.local	AccessGuard123!
+Manager	marc.manager@asteriatech.local	AccessGuard123!
+IT Admin	ines.itadmin@asteriatech.local	AccessGuard123!
+Security Admin	paul.security@asteriatech.local	AccessGuard123!
 
-Rôles disponibles
+Ces identifiants sont réservés à l’environnement pédagogique.
 
-L’application contient quatre rôles principaux.
+Authentification
+Connexion
+POST /auth/login
 
-Employee
+Exemple de requête :
 
-L’employé peut :
-
-se connecter ;
-consulter les ressources disponibles ;
-créer une demande d’accès ;
-renseigner une justification ;
-sélectionner une période ;
-consulter le statut de ses demandes ;
-consulter ses accès attribués.
-Manager
-
-Le manager peut :
-
-consulter les demandes en attente ;
-approuver une demande ;
-refuser une demande ;
-ajouter un commentaire de décision ;
-consulter les demandes déjà traitées.
-IT Admin
-
-L’administrateur IT peut :
-
-consulter les demandes approuvées ;
-attribuer techniquement un accès ;
-ajouter un commentaire d’attribution ;
-consulter les accès déjà attribués ;
-révoquer un accès lorsque cette fonction est disponible.
-Security Admin
-
-L’administrateur sécurité peut :
-
-consulter les demandes ;
-consulter les accès attribués ;
-consulter les journaux d’audit ;
-contrôler les actions réalisées dans l’application ;
-vérifier la cohérence des autorisations.
-Comptes de démonstration
-
-Ces comptes sont prévus uniquement pour l’environnement pédagogique local.
-
-Tous les comptes utilisent le même mot de passe de démonstration :
-
-AccessGuard123!
-Utilisateur	Adresse e-mail	Mot de passe	Rôle
-Alice Employee	alice.employee@asteriatech.local	AccessGuard123!	employee
-Marc Manager	marc.manager@asteriatech.local	AccessGuard123!	manager
-Inès IT Admin	ines.itadmin@asteriatech.local	AccessGuard123!	it_admin
-Paul Security	paul.security@asteriatech.local	AccessGuard123!	security_admin
-
-Le mot de passe est sensible à la casse. Il faut saisir exactement :
-
-AccessGuard123!
-Configuration des comptes dans le backend
-
-Dans le backend, le mot de passe commun est défini avec une constante :
-
-from typing import Final
-
-DEMO_PASSWORD: Final[str] = "AccessGuard123!"
-
-Les comptes utilisent ensuite le mot de passe haché :
-
-DEMO_USERS: Final[dict[str, dict[str, str]]] = {
-    "alice.employee@asteriatech.local": {
-        "email": "alice.employee@asteriatech.local",
-        "password_hash": hash_password(DEMO_PASSWORD),
-        "role": "employee",
-    },
-    "marc.manager@asteriatech.local": {
-        "email": "marc.manager@asteriatech.local",
-        "password_hash": hash_password(DEMO_PASSWORD),
-        "role": "manager",
-    },
-    "ines.itadmin@asteriatech.local": {
-        "email": "ines.itadmin@asteriatech.local",
-        "password_hash": hash_password(DEMO_PASSWORD),
-        "role": "it_admin",
-    },
-    "paul.security@asteriatech.local": {
-        "email": "paul.security@asteriatech.local",
-        "password_hash": hash_password(DEMO_PASSWORD),
-        "role": "security_admin",
-    },
+{
+  "email": "paul.security@asteriatech.local",
+  "password": "AccessGuard123!"
 }
-Installation du backend
 
-Ouvrir un terminal dans le dossier du backend :
+La réponse contient un jeton JWT :
 
-cd backend
+{
+  "access_token": "<JWT>",
+  "token_type": "bearer"
+}
 
-Créer un environnement virtuel :
+Dans Swagger, cliquer sur Authorize, puis saisir :
+
+Bearer <JWT>
+Routes principales
+Santé et supervision
+Méthode	Route	Description
+GET	/health	Vérifie l’état de l’API
+GET	/metrics	Expose les métriques Prometheus
+Authentification
+Méthode	Route	Description
+POST	/auth/login	Authentifie un utilisateur
+Ressources
+Méthode	Route	Description
+GET	/resources	Liste les ressources disponibles
+Demandes d’accès
+Méthode	Route	Description
+POST	/access-requests	Crée une demande d’accès
+GET	/access-requests	Liste les demandes
+PATCH	/access-requests/{id}/manager-decision	Accepte ou refuse une demande
+Attributions d’accès
+Méthode	Route	Description
+GET	/access-grants	Liste les accès attribués
+POST	/access-requests/{id}/grant	Attribue un accès approuvé
+PATCH	/access-grants/{id}/revoke	Révoque un accès
+Audit
+Méthode	Route	Description
+GET	/audit-logs	Consulte les journaux d’audit
+Routes d’administration des utilisateurs — V5
+
+Toutes les routes /users sont réservées au rôle security_admin.
+
+Méthode	Route	Description
+GET	/users	Liste tous les utilisateurs
+GET	/users/{user_id}	Consulte un utilisateur
+POST	/users	Crée un utilisateur
+PATCH	/users/{user_id}/role	Modifie le rôle d’un utilisateur
+PATCH	/users/{user_id}/status	Active ou désactive un utilisateur
+
+Les mots de passe ne sont jamais retournés par l’API.
+
+Règles RBAC
+
+AccessGuard applique un contrôle d’accès basé sur les rôles.
+
+Action	Employee	Manager	IT Admin	Security Admin
+Se connecter	Oui	Oui	Oui	Oui
+Voir les ressources	Oui	Oui	Oui	Oui
+Créer une demande d’accès	Oui	Non	Non	Non
+Accepter ou refuser une demande	Non	Oui	Non	Non
+Attribuer un accès	Non	Non	Oui	Non
+Révoquer un accès	Non	Non	Oui	Non
+Consulter les journaux d’audit	Non	Non	Non	Oui
+Administrer les utilisateurs	Non	Non	Non	Oui
+Codes d’erreur principaux
+Code	Signification
+200	Requête réussie
+201	Ressource créée
+401	Authentification absente ou invalide
+403	Rôle non autorisé
+404	Ressource introuvable
+409	Conflit, par exemple adresse email déjà utilisée
+422	Données de requête invalides
+Tester le projet
+Tests automatisés dans Docker
+docker compose exec accessguard-api pytest -v
+Tests locaux
+
+Créer puis activer un environnement virtuel :
 
 python -m venv .venv
 
-Activer l’environnement virtuel sous Windows :
+Sous Windows PowerShell :
 
 .\.venv\Scripts\Activate.ps1
 
@@ -184,271 +190,61 @@ Installer les dépendances :
 
 pip install -r requirements.txt
 
-Démarrer le serveur FastAPI :
-
-uvicorn app.main:app --reload
-
-Le backend est normalement accessible à l’adresse suivante :
-
-http://127.0.0.1:8000
-
-La documentation Swagger est accessible ici :
-
-http://127.0.0.1:8000/docs
-Installation du frontend
-
-Ouvrir un deuxième terminal :
-
-cd frontend
-
-Installer les dépendances :
-
-npm install
-
-Démarrer l’application React :
-
-npm run dev
-
-Le frontend est normalement accessible à l’adresse suivante :
-
-http://localhost:5173
-Test de l’authentification avec Swagger
-
-Ouvrir :
-
-http://127.0.0.1:8000/docs
-
-Sélectionner la route :
-
-POST /auth/login
-
-Cliquer sur Try it out puis utiliser, par exemple, le compte IT Admin :
-
-{
-  "email": "ines.itadmin@asteriatech.local",
-  "password": "AccessGuard123!"
-}
-
-Une réponse avec le code 200 indique que l’authentification fonctionne.
-
-Une réponse 401 Unauthorized indique que :
-
-l’adresse e-mail est incorrecte ;
-le mot de passe est incorrect ;
-le compte n’est pas présent dans DEMO_USERS ;
-le backend n’a pas été redémarré après une modification.
-Workflow d’une demande d’accès
-Étape 1 — Création de la demande
-
-Alice se connecte avec le rôle employee.
-
-Elle sélectionne une ressource, indique une justification et choisit une période.
-
-La demande est créée avec un statut similaire à :
-
-PENDING
-Étape 2 — Décision du manager
-
-Marc se connecte avec le rôle manager.
-
-Il consulte la demande puis peut :
-
-l’approuver ;
-la refuser ;
-ajouter un commentaire.
-
-Une demande approuvée reçoit le statut :
-
-APPROVED
-Étape 3 — Attribution par l’IT
-
-Inès se connecte avec le rôle it_admin.
-
-Elle consulte les demandes approuvées, ajoute un commentaire et clique sur :
-
-Attribuer l’accès
-
-L’accès apparaît ensuite dans la section :
-
-Accès attribués
-Étape 4 — Contrôle de sécurité
-
-Paul se connecte avec le rôle security_admin.
-
-Il peut consulter les opérations et les journaux d’audit afin de vérifier :
-
-qui a demandé l’accès ;
-qui a approuvé la demande ;
-qui a attribué l’accès ;
-à quelle date l’action a été réalisée ;
-quelle ressource a été concernée.
-Exemples de ressources
-
-Les ressources peuvent notamment représenter :
-
-un VPN d’entreprise ;
-une base de données ;
-un dépôt Git ;
-une application interne ;
-un espace documentaire ;
-une console cloud ;
-un serveur d’administration.
-
-Exemple :
-
-VPN Entreprise
-Statuts possibles
-
-Selon l’implémentation du projet, une demande peut utiliser les statuts suivants :
-
-PENDING
-APPROVED
-REJECTED
-GRANTED
-REVOKED
-
-Signification :
-
-PENDING : demande en attente de décision ;
-APPROVED : demande approuvée par le manager ;
-REJECTED : demande refusée ;
-GRANTED : accès attribué par l’administrateur IT ;
-REVOKED : accès retiré.
-Sécurité
-
-Le projet utilise plusieurs mécanismes de sécurité :
-
-hachage des mots de passe ;
-authentification par jeton JWT ;
-contrôle des rôles ;
-vérification des autorisations ;
-séparation des responsabilités ;
-validation des données avec Pydantic ;
-journalisation des opérations.
-
-Le mot de passe commun AccessGuard123! est utilisé uniquement pour simplifier les démonstrations locales.
-
-Il ne doit jamais être utilisé dans un environnement de production.
-
-Dans une version de production, il faudrait notamment :
-
-utiliser une base de données ;
-utiliser un secret JWT stocké dans une variable d’environnement ;
-imposer des mots de passe individuels ;
-ajouter une politique de complexité ;
-activer une authentification multifacteur ;
-limiter les tentatives de connexion ;
-utiliser HTTPS ;
-gérer l’expiration et le renouvellement des jetons ;
-protéger les journaux d’audit ;
-mettre en place une gestion des secrets.
-Vérification des rôles
-
-Après la connexion, l’interface affiche l’utilisateur et son rôle.
-
-Exemple pour l’administrateur IT :
-
-Utilisateur : ines.itadmin@asteriatech.local
-Rôle : it_admin
-
-Exemple pour le manager :
-
-Utilisateur : marc.manager@asteriatech.local
-Rôle : manager
-Résolution des problèmes
-Erreur 401 lors de la connexion
-
-Vérifier que le mot de passe utilisé est :
-
-AccessGuard123!
-
-Vérifier également que le compte existe dans DEMO_USERS.
-
-Redémarrer le backend :
-
-Ctrl + C
-uvicorn app.main:app --reload
-Le frontend ne contacte pas le backend
-
-Vérifier que le backend fonctionne sur :
-
-http://127.0.0.1:8000
-
-Vérifier que l’URL de connexion utilisée dans React est correcte :
-
-http://127.0.0.1:8000/auth/login
-Erreur CORS
-
-Vérifier que FastAPI autorise le frontend :
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-Les modifications ne sont pas prises en compte
-
-Arrêter puis relancer le backend et le frontend.
-
-Backend :
-
-Ctrl + C
-uvicorn app.main:app --reload
-
-Frontend :
-
-Ctrl + C
-npm run dev
-Limites actuelles
-
-Cette version est destinée à une démonstration pédagogique.
-
-Certaines données peuvent être conservées uniquement en mémoire. Elles peuvent donc disparaître lors du redémarrage du backend.
-
-Les comptes de démonstration utilisent également un mot de passe commun afin de faciliter les tests.
-
-Améliorations prévues
-
-Les prochaines versions pourront inclure :
-
-une base de données PostgreSQL ;
-une interface graphique améliorée ;
-un tableau de bord par rôle ;
-des filtres et une recherche ;
-la révocation des accès ;
-l’expiration automatique des autorisations ;
-des notifications ;
-un historique complet ;
-des métriques Prometheus ;
-des tableaux de bord Grafana ;
-une conteneurisation Docker ;
-un déploiement automatisé ;
-Terraform ;
-une intégration continue avec GitHub Actions ;
-des tests automatisés ;
-une gestion centralisée des secrets.
+Lancer les tests :
+
+pytest -v
+
+Lancer uniquement les tests liés aux utilisateurs :
+
+pytest -v tests/test_users.py
+Vérifier la qualité du code
+
+Selon les outils présents dans le projet :
+
+ruff check .
+black --check .
+bandit -r app
+Scénario de démonstration V5
+Se connecter avec le compte security_admin.
+Récupérer le jeton JWT.
+Appeler GET /users.
+Créer un nouvel utilisateur avec POST /users.
+Vérifier qu’une adresse email existante retourne 409.
+Modifier le rôle de l’utilisateur.
+Désactiver l’utilisateur.
+Vérifier que l’utilisateur désactivé ne peut plus se connecter.
+Réactiver l’utilisateur.
+Vérifier les journaux et résultats des tests.
+Captures disponibles
+
+Les captures de validation disponibles comprennent notamment :
+
+Capture	Description
+02_v5_users_table_created.png	Création et structure de la table users
+03_v5_login_sqlite_success.png	Connexion réussie avec un utilisateur SQLite
+04_v5_inactive_user_denied.png	Refus de connexion pour un utilisateur désactivé
+05_v5_security_users_admin.png	Administration des utilisateurs par le Security Admin
+
+D’autres captures peuvent être ajoutées dans un dossier comme :
+
+docs/screenshots/v5/
+Limites restantes
+
+La version actuelle présente encore plusieurs limites :
+
+aucune fonctionnalité de réinitialisation de mot de passe ;
+aucun mécanisme de renouvellement de jeton JWT ;
+aucune authentification multifacteur ;
+absence de suppression définitive d’utilisateur ;
+interface graphique d’administration des utilisateurs encore limitée ou absente ;
+secrets de démonstration non adaptés à un environnement de production ;
+base SQLite adaptée à la démonstration, mais limitée pour un déploiement distribué ;
+gestion des sessions et révocation des jetons non implémentées ;
+couverture de tests à maintenir lors des prochaines évolutions ;
+observabilité et alertes encore perfectibles ;
+absence de gestion complète des migrations de base de données.
 Avertissement
 
 AccessGuard est un projet pédagogique.
 
-Les utilisateurs, ressources, mots de passe et données présentés dans l’application sont fictifs.
-
-Aucun compte de démonstration ne doit être utilisé sur un service réel.
-
-Auteur
-
-Projet AccessGuard réalisé dans le cadre d’un projet pédagogique consacré à la cybersécurité, au cloud, au DevOps et à la gouvernance des accès.
-
-
-La correction principale est que les quatre comptes utilisent désormais tous :
-
-```text
-AccessGuard123!
-
-et que le compte sécurité correspond au code actuel :
-
-paul.security@asteriatech.local
+Les comptes, mots de passe, secrets JWT et configurations fournis dans ce dépôt ne doivent pas être réutilisés dans un environnement réel.

@@ -10,7 +10,7 @@ USER_ROUTES = {
     "collection": "/users",
     "detail": "/users/{user_id}",
     "role": "/users/{user_id}/role",
-    "deactivate": "/users/{user_id}/deactivate",
+    "status": "/users/{user_id}/status",
 }
 
 
@@ -22,18 +22,25 @@ NEW_USER_PAYLOAD: dict[str, Any] = {
 }
 
 
-def route_exists(client: TestClient, method: str, path: str) -> bool:
+def route_exists(
+    client: TestClient,
+    method: str,
+    path: str,
+) -> bool:
     """
     Vérifie si une route est déclarée dans FastAPI.
 
-    Un code 404 peut aussi venir d’un identifiant inexistant. Pour une route
-    avec paramètre, on inspecte donc d’abord le schéma OpenAPI.
+    Pour les routes contenant un paramètre, le schéma OpenAPI
+    est utilisé afin de distinguer une route absente d'un simple 404.
     """
-
     openapi_response = client.get("/openapi.json")
+
     assert openapi_response.status_code == 200
 
-    openapi_paths = openapi_response.json().get("paths", {})
+    openapi_paths = openapi_response.json().get(
+        "paths",
+        {},
+    )
 
     normalized_path = path
 
@@ -42,13 +49,18 @@ def route_exists(client: TestClient, method: str, path: str) -> bool:
 
         for part in route_path.split("/"):
             if part.startswith("{") and part.endswith("}"):
-                route_without_parameters = route_without_parameters.replace(
-                    part,
-                    "1",
+                route_without_parameters = (
+                    route_without_parameters.replace(
+                        part,
+                        "1",
+                    )
                 )
 
         if route_without_parameters == normalized_path:
-            return method.lower() in openapi_paths[route_path]
+            return (
+                method.lower()
+                in openapi_paths[route_path]
+            )
 
     return False
 
@@ -58,27 +70,37 @@ def require_users_api(
     method: str,
     path: str,
 ) -> None:
-    """Ignore proprement le test si le backend V5 utilisateurs est absent."""
-
-    if not route_exists(client, method, path):
+    """
+    Ignore le test si les routes utilisateurs ne sont pas présentes.
+    """
+    if not route_exists(
+        client,
+        method,
+        path,
+    ):
         pytest.skip(
-            "Les routes CRUD utilisateurs V5 ne sont pas encore "
-            "implémentées par le backend."
+            "Les routes CRUD utilisateurs V5 "
+            "ne sont pas encore implémentées."
         )
 
 
 def create_user(
     client: TestClient,
-    admin_headers: dict[str, str],
+    security_admin_headers: dict[str, str],
     payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Crée un utilisateur et retourne sa représentation JSON."""
-
-    actual_payload = payload or NEW_USER_PAYLOAD
+    """
+    Crée un utilisateur avec le compte security_admin.
+    """
+    actual_payload = (
+        payload
+        if payload is not None
+        else NEW_USER_PAYLOAD
+    )
 
     response = client.post(
         USER_ROUTES["collection"],
-        headers=admin_headers,
+        headers=security_admin_headers,
         json=actual_payload,
     )
 
@@ -89,6 +111,8 @@ def create_user(
     assert "id" in body
     assert body["email"] == actual_payload["email"]
     assert body["role"] == actual_payload["role"]
+    assert "password" not in body
+    assert "password_hash" not in body
 
     return body
 
@@ -103,7 +127,9 @@ def test_users_route_requires_authentication(
         USER_ROUTES["collection"],
     )
 
-    response = client.get(USER_ROUTES["collection"])
+    response = client.get(
+        USER_ROUTES["collection"]
+    )
 
     assert response.status_code == 401
     assert "detail" in response.json()
@@ -131,9 +157,50 @@ def test_employee_cannot_list_users(
 
 
 @pytest.mark.users
-def test_it_admin_can_create_user(
+@pytest.mark.rbac
+def test_it_admin_cannot_list_users(
     client: TestClient,
     it_admin_headers: dict[str, str],
+) -> None:
+    require_users_api(
+        client,
+        "get",
+        USER_ROUTES["collection"],
+    )
+
+    response = client.get(
+        USER_ROUTES["collection"],
+        headers=it_admin_headers,
+    )
+
+    assert response.status_code == 403
+    assert "detail" in response.json()
+
+
+@pytest.mark.users
+def test_security_admin_can_list_users(
+    client: TestClient,
+    security_admin_headers: dict[str, str],
+) -> None:
+    require_users_api(
+        client,
+        "get",
+        USER_ROUTES["collection"],
+    )
+
+    response = client.get(
+        USER_ROUTES["collection"],
+        headers=security_admin_headers,
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+@pytest.mark.users
+def test_security_admin_can_create_user(
+    client: TestClient,
+    security_admin_headers: dict[str, str],
 ) -> None:
     require_users_api(
         client,
@@ -143,12 +210,12 @@ def test_it_admin_can_create_user(
 
     user = create_user(
         client,
-        it_admin_headers,
+        security_admin_headers,
     )
 
     assert user["email"] == NEW_USER_PAYLOAD["email"]
     assert user["role"] == "employee"
-    assert user.get("is_active", True) is True
+    assert user["is_active"] is True
     assert "password" not in user
     assert "password_hash" not in user
 
@@ -156,7 +223,7 @@ def test_it_admin_can_create_user(
 @pytest.mark.users
 def test_duplicate_user_is_rejected(
     client: TestClient,
-    it_admin_headers: dict[str, str],
+    security_admin_headers: dict[str, str],
 ) -> None:
     require_users_api(
         client,
@@ -166,12 +233,12 @@ def test_duplicate_user_is_rejected(
 
     create_user(
         client,
-        it_admin_headers,
+        security_admin_headers,
     )
 
     duplicate_response = client.post(
         USER_ROUTES["collection"],
-        headers=it_admin_headers,
+        headers=security_admin_headers,
         json=NEW_USER_PAYLOAD,
     )
 
@@ -203,9 +270,80 @@ def test_employee_cannot_create_user(
 
 @pytest.mark.users
 @pytest.mark.rbac
-def test_it_admin_can_update_user_role(
+def test_it_admin_cannot_create_user(
     client: TestClient,
     it_admin_headers: dict[str, str],
+) -> None:
+    require_users_api(
+        client,
+        "post",
+        USER_ROUTES["collection"],
+    )
+
+    response = client.post(
+        USER_ROUTES["collection"],
+        headers=it_admin_headers,
+        json=NEW_USER_PAYLOAD,
+    )
+
+    assert response.status_code == 403
+    assert "detail" in response.json()
+
+
+@pytest.mark.users
+def test_security_admin_can_get_user_by_id(
+    client: TestClient,
+    security_admin_headers: dict[str, str],
+) -> None:
+    require_users_api(
+        client,
+        "get",
+        "/users/1",
+    )
+
+    user = create_user(
+        client,
+        security_admin_headers,
+    )
+
+    response = client.get(
+        USER_ROUTES["detail"].format(
+            user_id=user["id"]
+        ),
+        headers=security_admin_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == user["id"]
+
+
+@pytest.mark.users
+def test_unknown_user_returns_404(
+    client: TestClient,
+    security_admin_headers: dict[str, str],
+) -> None:
+    require_users_api(
+        client,
+        "get",
+        "/users/1",
+    )
+
+    response = client.get(
+        USER_ROUTES["detail"].format(
+            user_id=999999
+        ),
+        headers=security_admin_headers,
+    )
+
+    assert response.status_code == 404
+    assert "detail" in response.json()
+
+
+@pytest.mark.users
+@pytest.mark.rbac
+def test_security_admin_can_update_user_role(
+    client: TestClient,
+    security_admin_headers: dict[str, str],
 ) -> None:
     require_users_api(
         client,
@@ -220,12 +358,14 @@ def test_it_admin_can_update_user_role(
 
     user = create_user(
         client,
-        it_admin_headers,
+        security_admin_headers,
     )
 
     response = client.patch(
-        USER_ROUTES["role"].format(user_id=user["id"]),
-        headers=it_admin_headers,
+        USER_ROUTES["role"].format(
+            user_id=user["id"]
+        ),
+        headers=security_admin_headers,
         json={
             "role": "manager",
         },
@@ -238,7 +378,7 @@ def test_it_admin_can_update_user_role(
 @pytest.mark.users
 def test_invalid_role_is_rejected(
     client: TestClient,
-    it_admin_headers: dict[str, str],
+    security_admin_headers: dict[str, str],
 ) -> None:
     require_users_api(
         client,
@@ -253,25 +393,53 @@ def test_invalid_role_is_rejected(
 
     user = create_user(
         client,
-        it_admin_headers,
+        security_admin_headers,
     )
 
     response = client.patch(
-        USER_ROUTES["role"].format(user_id=user["id"]),
-        headers=it_admin_headers,
+        USER_ROUTES["role"].format(
+            user_id=user["id"]
+        ),
+        headers=security_admin_headers,
         json={
             "role": "super_root_admin",
         },
     )
 
     assert response.status_code == 422
+    assert "detail" in response.json()
+
+
+@pytest.mark.users
+def test_unknown_user_role_update_returns_404(
+    client: TestClient,
+    security_admin_headers: dict[str, str],
+) -> None:
+    require_users_api(
+        client,
+        "patch",
+        "/users/1/role",
+    )
+
+    response = client.patch(
+        USER_ROUTES["role"].format(
+            user_id=999999
+        ),
+        headers=security_admin_headers,
+        json={
+            "role": "manager",
+        },
+    )
+
+    assert response.status_code == 404
+    assert "detail" in response.json()
 
 
 @pytest.mark.users
 @pytest.mark.rbac
 def test_employee_cannot_update_user_role(
     client: TestClient,
-    it_admin_headers: dict[str, str],
+    security_admin_headers: dict[str, str],
     employee_headers: dict[str, str],
 ) -> None:
     require_users_api(
@@ -287,11 +455,13 @@ def test_employee_cannot_update_user_role(
 
     user = create_user(
         client,
-        it_admin_headers,
+        security_admin_headers,
     )
 
     response = client.patch(
-        USER_ROUTES["role"].format(user_id=user["id"]),
+        USER_ROUTES["role"].format(
+            user_id=user["id"]
+        ),
         headers=employee_headers,
         json={
             "role": "manager",
@@ -302,9 +472,9 @@ def test_employee_cannot_update_user_role(
 
 
 @pytest.mark.users
-def test_it_admin_can_deactivate_user(
+def test_security_admin_can_deactivate_user(
     client: TestClient,
-    it_admin_headers: dict[str, str],
+    security_admin_headers: dict[str, str],
 ) -> None:
     require_users_api(
         client,
@@ -314,17 +484,22 @@ def test_it_admin_can_deactivate_user(
     require_users_api(
         client,
         "patch",
-        "/users/1/deactivate",
+        "/users/1/status",
     )
 
     user = create_user(
         client,
-        it_admin_headers,
+        security_admin_headers,
     )
 
     response = client.patch(
-        USER_ROUTES["deactivate"].format(user_id=user["id"]),
-        headers=it_admin_headers,
+        USER_ROUTES["status"].format(
+            user_id=user["id"]
+        ),
+        headers=security_admin_headers,
+        json={
+            "is_active": False,
+        },
     )
 
     assert response.status_code == 200
@@ -332,10 +507,35 @@ def test_it_admin_can_deactivate_user(
 
 
 @pytest.mark.users
+def test_unknown_user_status_update_returns_404(
+    client: TestClient,
+    security_admin_headers: dict[str, str],
+) -> None:
+    require_users_api(
+        client,
+        "patch",
+        "/users/1/status",
+    )
+
+    response = client.patch(
+        USER_ROUTES["status"].format(
+            user_id=999999
+        ),
+        headers=security_admin_headers,
+        json={
+            "is_active": False,
+        },
+    )
+
+    assert response.status_code == 404
+    assert "detail" in response.json()
+
+
+@pytest.mark.users
 @pytest.mark.auth
 def test_deactivated_user_cannot_login(
     client: TestClient,
-    it_admin_headers: dict[str, str],
+    security_admin_headers: dict[str, str],
 ) -> None:
     require_users_api(
         client,
@@ -345,17 +545,22 @@ def test_deactivated_user_cannot_login(
     require_users_api(
         client,
         "patch",
-        "/users/1/deactivate",
+        "/users/1/status",
     )
 
     user = create_user(
         client,
-        it_admin_headers,
+        security_admin_headers,
     )
 
     deactivate_response = client.patch(
-        USER_ROUTES["deactivate"].format(user_id=user["id"]),
-        headers=it_admin_headers,
+        USER_ROUTES["status"].format(
+            user_id=user["id"]
+        ),
+        headers=security_admin_headers,
+        json={
+            "is_active": False,
+        },
     )
 
     assert deactivate_response.status_code == 200
@@ -368,5 +573,5 @@ def test_deactivated_user_cannot_login(
         },
     )
 
-    assert login_response.status_code in {401, 403}
+    assert login_response.status_code == 403
     assert "detail" in login_response.json()

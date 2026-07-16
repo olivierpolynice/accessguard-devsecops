@@ -2,7 +2,8 @@ fastapi
 uvicorn[standard]
 pytest
 httpx
-bcrypt
-PyJWT
+bcrypt<4.1
+passlib[bcrypt]
+python-jose[cryptography]
 python-dotenv
 prometheus-fastapi-instrumentator

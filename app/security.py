@@ -7,6 +7,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
 
+from app.metrics import forbidden_actions_total
+
 
 # ============================================================
 # Configuration JWT
@@ -137,24 +139,6 @@ def create_access_token(
     Crée un JWT AccessGuard.
 
     Compatible avec les anciennes et nouvelles syntaxes.
-
-    Exemple ancien :
-
-        create_access_token(
-            subject="alice.employee@asteriatech.local",
-            role="employee",
-        )
-
-    Exemple nouveau :
-
-        create_access_token(
-            data={
-                "sub": "alice.employee@asteriatech.local",
-                "role": "employee",
-                "user_id": 1,
-                "is_active": True,
-            }
-        )
     """
     payload: dict[str, Any] = {}
 
@@ -254,7 +238,8 @@ def get_current_user(
     Distingue :
     - l'absence de token ;
     - un token expiré ;
-    - un token invalide.
+    - un token invalide ;
+    - un compte désactivé.
     """
 
     if token is None:
@@ -309,6 +294,8 @@ def get_current_user(
     )
 
     if not is_active:
+        forbidden_actions_total.inc()
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Ce compte est désactivé.",
@@ -380,18 +367,11 @@ def require_roles(
             get_current_user
         ),
     ) -> dict[str, Any]:
-        if not current_user.get(
-            "is_active",
-            True,
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Ce compte est désactivé.",
-            )
-
         user_role = current_user.get("role")
 
         if user_role not in allowed_roles:
+            forbidden_actions_total.inc()
+
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(

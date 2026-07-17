@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AccessGuard &mdash; Interface V3</title>
+  <title>AccessGuard &mdash; Interface V5</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -15,13 +15,8 @@
         <p>AsteriaTech IAM</p>
       </div>
     </div>
-    <nav class="nav">
-      <a href="#login">Login</a>
-      <a href="#dashboard" class="active">Dashboard</a>
-      <a href="#requests">Demandes d&rsquo;acc&egrave;s</a>
-      <a href="#grants">Acc&egrave;s attribu&eacute;s</a>
-      <a href="#audit">Audit logs</a>
-      <a href="#monitoring">Monitoring</a>
+    <nav class="nav" id="main-nav">
+      <!-- Généré dynamiquement par app.js selon le rôle -->
     </nav>
     <div class="sidebar-card">
       <span class="status-dot"></span>
@@ -32,12 +27,12 @@
   <main class="main">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Projet p&eacute;dagogique M1 &mdash; V3</p>
-        <h2>Gouvernance des acc&egrave;s internes</h2>
+        <p class="eyebrow">Projet pédagogique M1 &mdash; V5</p>
+        <h2>Gouvernance des accès internes</h2>
       </div>
       <div class="user-card">
-        <div class="avatar">EI</div>
-        <div><strong>Elodie IPARRAGUIRRE</strong><small>UI/UX &middot; Cybersecurity</small></div>
+        <div class="avatar" id="user-avatar">EI</div>
+        <div><strong id="user-name">Elodie IPARRAGUIRRE</strong><small>UI/UX &middot; Cybersecurity</small></div>
       </div>
     </header>
 
@@ -63,7 +58,7 @@
         </div>
 
         <div class="login-role">
-          <label for="login-role">R&ocirc;le (d&eacute;monstration)</label>
+          <label for="login-role">Rôle (démonstration)</label>
           <select id="login-role">
             <option value="employee">Employee</option>
             <option value="manager">Manager</option>
@@ -72,11 +67,11 @@
           </select>
         </div>
 
-        <button class="login-btn" onclick="window.location.hash='#dashboard'">Se connecter</button>
+        <button class="login-btn" id="login-btn">Se connecter</button>
 
         <div class="login-hint">
-          <strong>Comptes de d&eacute;monstration</strong>
-          alice.employee &bull; marc.manager &bull; ines.itadmin &bull; sam.security &mdash; mot de passe&nbsp;: <code>demo1234</code>
+          <strong>Comptes de démonstration</strong>
+          alice.employee &bull; marc.manager &bull; ines.itadmin &bull; sam.security &mdash; mot de passe : <code>demo1234</code>
         </div>
       </div>
     </section>
@@ -84,107 +79,293 @@
     <!-- ==================== DASHBOARD ==================== -->
     <section id="dashboard" class="section">
       <div class="section-heading">
-        <div><p class="eyebrow">Vue globale</p><h3>Dashboard op&eacute;rationnel</h3></div>
+        <div><p class="eyebrow">Vue globale</p><h3>Dashboard opérationnel</h3></div>
         <button class="primary-btn">Nouvelle demande</button>
       </div>
-
-      <div class="stats-grid">
-        <article class="stat-card"><span>Demandes en attente</span><strong>08</strong><p>Validation manager requise</p></article>
-        <article class="stat-card success"><span>Acc&egrave;s actifs</span><strong>24</strong><p>Acc&egrave;s actuellement ouverts</p></article>
-        <article class="stat-card warning"><span>R&eacute;vocations</span><strong>03</strong><p>Actions s&eacute;curit&eacute; r&eacute;centes</p></article>
-        <article class="stat-card dark"><span>Disponibilit&eacute; API</span><strong>UP</strong><p>Prometheus scrape OK</p></article>
+      <div class="stats-grid" id="dashboard-stats">
+        <!-- Généré dynamiquement par app.js selon le rôle -->
       </div>
-
       <div class="content-grid">
         <article class="panel large">
-          <div class="panel-header"><h4>Demandes r&eacute;centes</h4><span class="badge">Workflow</span></div>
+          <div class="panel-header"><h4>Demandes récentes</h4><span class="badge">Workflow</span></div>
           <table>
             <thead><tr><th>ID</th><th>Demandeur</th><th>Ressource</th><th>Statut</th><th>Risque</th></tr></thead>
             <tbody>
-              <tr><td>#101</td><td>Alice Employee</td><td>VPN Entreprise</td><td><span class="pill pending">PENDING</span></td><td>Medium</td></tr>
-              <tr><td>#102</td><td>Marc Manager</td><td>Finance Share</td><td><span class="pill approved">APPROVED</span></td><td>High</td></tr>
-              <tr><td>#103</td><td>In&egrave;s IT Admin</td><td>Grafana</td><td><span class="pill granted">GRANTED</span></td><td>Low</td></tr>
+              <tr><td>#101</td><td>Alice Employee</td><td>VPN Entreprise</td><td><span class="pill pending">EN ATTENTE</span></td><td>Medium</td></tr>
+              <tr><td>#102</td><td>Marc Manager</td><td>Finance Share</td><td><span class="pill approved">APPROUVÉ</span></td><td>High</td></tr>
+              <tr><td>#103</td><td>Inès IT Admin</td><td>Grafana</td><td><span class="pill granted">ACTIF</span></td><td>Low</td></tr>
             </tbody>
           </table>
         </article>
-
         <article class="panel">
           <div class="panel-header"><h4>Flux de validation</h4></div>
           <ol class="timeline">
-            <li><strong>Employee</strong><span>Cr&eacute;ation demande</span></li>
+            <li><strong>Employee</strong><span>Création demande</span></li>
             <li><strong>Manager</strong><span>Approbation / refus</span></li>
-            <li><strong>IT Admin</strong><span>Attribution acc&egrave;s</span></li>
-            <li><strong>Security</strong><span>Audit / r&eacute;vocation</span></li>
+            <li><strong>IT Admin</strong><span>Attribution accès</span></li>
+            <li><strong>Security</strong><span>Audit / révocation</span></li>
           </ol>
         </article>
       </div>
     </section>
 
-    <!-- ==================== DEMANDES D'ACCES ==================== -->
+    <!-- ==================== RESOURCES (Employee) ==================== -->
+    <section id="resources" class="section">
+      <div class="section-heading">
+        <div><p class="eyebrow">Catalogue</p><h3>Ressources disponibles</h3></div>
+      </div>
+      <div class="cards-row">
+        <article class="access-card">
+          <div><h4>VPN Entreprise</h4><p>Accès distant aux ressources internes</p></div>
+          <span class="pill approved">MEDIUM</span>
+        </article>
+        <article class="access-card">
+          <div><h4>Finance Share</h4><p>Documents budgétaires temporaires</p></div>
+          <span class="pill revoked">HIGH</span>
+        </article>
+        <article class="access-card">
+          <div><h4>Portail Admin</h4><p>Opérations d'administration</p></div>
+          <span class="pill revoked">CRITICAL</span>
+        </article>
+        <article class="access-card">
+          <div><h4>Grafana</h4><p>Métriques et tableaux de bord</p></div>
+          <span class="pill granted">LOW</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== DEMANDES D'ACCES (Employee) ==================== -->
     <section id="requests" class="section">
       <div class="section-heading">
-        <div><p class="eyebrow">Workflow m&eacute;tier</p><h3>Demandes d&rsquo;acc&egrave;s</h3></div>
+        <div><p class="eyebrow">Workflow métier</p><h3>Mes demandes d'accès</h3></div>
         <button class="secondary-btn">Exporter CSV</button>
       </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">Toutes</button>
+        <button class="filter-btn" data-filter="pending">En attente</button>
+        <button class="filter-btn" data-filter="approved">Approuvées</button>
+        <button class="filter-btn" data-filter="revoked">Refusées</button>
+        <button class="filter-btn" data-filter="granted">Actives</button>
+      </div>
       <article class="panel">
+        <div id="requests-error"></div>
         <div class="form-grid">
           <label>Ressource
-            <select>
+            <select id="req-resource">
               <option>VPN Entreprise</option>
               <option>Finance Share</option>
               <option>Admin Console</option>
               <option>Grafana</option>
             </select>
           </label>
-          <label>Date d&eacute;but<input type="date" value="2026-07-08" /></label>
-          <label>Date fin<input type="date" value="2026-07-31" /></label>
-          <label class="wide">Justification<textarea>Acc&egrave;s n&eacute;cessaire pour r&eacute;aliser les tests de validation V3.</textarea></label>
+          <label>Date début<input type="date" id="req-start" value="2026-07-08" /></label>
+          <label>Date fin<input type="date" id="req-end" value="2026-07-31" /></label>
+          <label class="wide">Justification<textarea id="req-justification">Accès nécessaire pour réaliser les tests de validation V5.</textarea></label>
+          <div class="wide">
+            <button class="primary-btn" id="btn-submit-request" data-label="Envoyer la demande">Envoyer la demande</button>
+          </div>
         </div>
+        <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border);" />
+        <table>
+          <thead><tr><th>ID</th><th>Ressource</th><th>Statut</th><th>Date début</th><th>Date fin</th></tr></thead>
+          <tbody id="requests-table-body">
+            <tr><td>#101</td><td>VPN Entreprise</td><td><span class="pill pending">EN ATTENTE</span></td><td>08/07/2026</td><td>31/07/2026</td></tr>
+            <tr><td>#102</td><td>Finance Share</td><td><span class="pill approved">APPROUVÉ</span></td><td>08/07/2026</td><td>31/07/2026</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <!-- ==================== MANAGER REQUESTS ==================== -->
+    <section id="manager-requests" class="section">
+      <div class="section-heading">
+        <div><p class="eyebrow">Validation</p><h3>Demandes à valider</h3></div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">Toutes</button>
+        <button class="filter-btn" data-filter="pending">En attente</button>
+        <button class="filter-btn" data-filter="approved">Approuvées</button>
+        <button class="filter-btn" data-filter="revoked">Refusées</button>
+      </div>
+      <article class="panel">
+        <div id="manager-error"></div>
+        <table>
+          <thead><tr><th>ID</th><th>Demandeur</th><th>Ressource</th><th>Justification</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>#101</td><td>alice.employee</td><td>VPN Entreprise</td>
+              <td>Accès nécessaire pour les tests V5.</td>
+              <td><span class="pill pending">EN ATTENTE</span></td>
+              <td>
+                <button class="primary-btn btn-approve" data-label="Approuver">Approuver</button>
+                <button class="danger-btn btn-refuse" data-label="Refuser">Refuser</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#104</td><td>marc.manager</td><td>Finance Share</td>
+              <td>Audit trimestriel des comptes.</td>
+              <td><span class="pill pending">EN ATTENTE</span></td>
+              <td>
+                <button class="primary-btn btn-approve" data-label="Approuver">Approuver</button>
+                <button class="danger-btn btn-refuse" data-label="Refuser">Refuser</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </article>
     </section>
 
     <!-- ==================== ACCES ATTRIBUES ==================== -->
     <section id="grants" class="section">
       <div class="section-heading">
-        <div><p class="eyebrow">Contr&ocirc;le des acc&egrave;s</p><h3>Acc&egrave;s attribu&eacute;s</h3></div>
+        <div><p class="eyebrow">Contrôle des accès</p><h3>Accès attribués</h3></div>
       </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">Tous</button>
+        <button class="filter-btn" data-filter="granted">Actifs</button>
+        <button class="filter-btn" data-filter="revoked">Révoqués</button>
+        <button class="filter-btn" data-filter="approved">Approuvés</button>
+      </div>
+      <div id="grants-error"></div>
       <div class="cards-row">
-        <article class="access-card"><div><h4>VPN Entreprise</h4><p>alice.employee@asteriatech.local</p></div><span class="pill granted">ACTIVE</span></article>
-        <article class="access-card"><div><h4>Grafana Monitoring</h4><p>ines.itadmin@asteriatech.local</p></div><span class="pill revoked">REVOKED</span></article>
-        <article class="access-card"><div><h4>Finance Share</h4><p>marc.manager@asteriatech.local</p></div><span class="pill approved">APPROVED</span></article>
+        <article class="access-card">
+          <div><h4>VPN Entreprise</h4><p>alice.employee@asteriatech.local</p></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="pill granted">ACTIF</span>
+            <button class="danger-btn btn-revoke" data-label="Révoquer">Révoquer</button>
+          </div>
+        </article>
+        <article class="access-card">
+          <div><h4>Grafana Monitoring</h4><p>ines.itadmin@asteriatech.local</p></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="pill revoked">RÉVOQUÉ</span>
+          </div>
+        </article>
+        <article class="access-card">
+          <div><h4>Finance Share</h4><p>marc.manager@asteriatech.local</p></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="pill approved">APPROUVÉ</span>
+            <button class="danger-btn btn-revoke" data-label="Révoquer">Révoquer</button>
+          </div>
+        </article>
       </div>
     </section>
 
     <!-- ==================== AUDIT LOGS ==================== -->
     <section id="audit" class="section">
       <div class="section-heading">
-        <div><p class="eyebrow">Tra&ccedil;abilit&eacute;</p><h3>Audit logs</h3></div>
+        <div><p class="eyebrow">Traçabilité</p><h3>Audit logs</h3></div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">Tous</button>
+        <button class="filter-btn" data-filter="pending">En attente</button>
+        <button class="filter-btn" data-filter="approved">Approuvés</button>
+        <button class="filter-btn" data-filter="revoked">Révoqués</button>
+        <button class="filter-btn" data-filter="granted">Actifs</button>
       </div>
       <article class="panel">
         <div class="table-container">
           <table>
-            <thead><tr><th>Action</th><th>Acteur</th><th>Entit&eacute;</th><th>R&eacute;sultat</th><th>Date</th></tr></thead>
-            <tbody>
-              <tr><td>ACCESS_REQUEST_CREATED</td><td>alice.employee</td><td>access_request #101</td><td><span class="pill pending">PENDING_MANAGER</span></td><td>08/07/2026</td></tr>
-              <tr><td>MANAGER_DECISION</td><td>marc.manager</td><td>access_request #102</td><td><span class="pill approved">APPROVED</span></td><td>08/07/2026</td></tr>
-              <tr><td>ACCESS_REVOKED</td><td>sam.security</td><td>access_grant #55</td><td><span class="pill revoked">REVOKED</span></td><td>08/07/2026</td></tr>
+            <thead><tr><th>Action</th><th>Acteur</th><th>Entité</th><th>Résultat</th><th>Date</th></tr></thead>
+            <tbody id="audit-table-body">
+              <tr><td>ACCESS_REQUEST_CREATED</td><td>alice.employee</td><td>access_request #101</td><td><span class="pill pending">EN ATTENTE</span></td><td>08/07/2026</td></tr>
+              <tr><td>MANAGER_DECISION</td><td>marc.manager</td><td>access_request #102</td><td><span class="pill approved">APPROUVÉ</span></td><td>08/07/2026</td></tr>
+              <tr><td>ACCESS_REVOKED</td><td>sam.security</td><td>access_grant #55</td><td><span class="pill revoked">RÉVOQUÉ</span></td><td>08/07/2026</td></tr>
             </tbody>
           </table>
         </div>
       </article>
     </section>
 
+    <!-- ==================== USERS (Security Admin) ==================== -->
+    <section id="users" class="section">
+      <div class="section-heading">
+        <div><p class="eyebrow">Administration</p><h3>Gestion des utilisateurs</h3></div>
+        <button class="primary-btn" data-label="Ajouter">Ajouter un utilisateur</button>
+      </div>
+      <div id="users-error"></div>
+      <article class="panel">
+        <table>
+          <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Statut</th><th>Dernière connexion</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>alice.employee</td>
+              <td><span class="role-badge employee">Employee</span></td>
+              <td><span class="pill granted">ACTIF</span></td>
+              <td>08/07/2026</td>
+              <td>
+                <select class="role-select" data-user="alice">
+                  <option value="employee" selected>Employee</option>
+                  <option value="manager">Manager</option>
+                  <option value="it_admin">IT Admin</option>
+                  <option value="security_admin">Security Admin</option>
+                </select>
+                <button class="danger-btn btn-deactivate" data-label="Désactiver">Désactiver</button>
+              </td>
+            </tr>
+            <tr>
+              <td>marc.manager</td>
+              <td><span class="role-badge manager">Manager</span></td>
+              <td><span class="pill granted">ACTIF</span></td>
+              <td>08/07/2026</td>
+              <td>
+                <select class="role-select" data-user="marc">
+                  <option value="employee">Employee</option>
+                  <option value="manager" selected>Manager</option>
+                  <option value="it_admin">IT Admin</option>
+                  <option value="security_admin">Security Admin</option>
+                </select>
+                <button class="danger-btn btn-deactivate" data-label="Désactiver">Désactiver</button>
+              </td>
+            </tr>
+            <tr>
+              <td>ines.itadmin</td>
+              <td><span class="role-badge it_admin">IT Admin</span></td>
+              <td><span class="pill revoked">INACTIF</span></td>
+              <td>01/07/2026</td>
+              <td>
+                <select class="role-select" data-user="ines">
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                  <option value="it_admin" selected>IT Admin</option>
+                  <option value="security_admin">Security Admin</option>
+                </select>
+                <button class="primary-btn btn-activate" data-label="Activer">Activer</button>
+              </td>
+            </tr>
+            <tr>
+              <td>sam.security</td>
+              <td><span class="role-badge security_admin">Security Admin</span></td>
+              <td><span class="pill granted">ACTIF</span></td>
+              <td>08/07/2026</td>
+              <td>
+                <select class="role-select" data-user="sam">
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                  <option value="it_admin">IT Admin</option>
+                  <option value="security_admin" selected>Security Admin</option>
+                </select>
+                <button class="danger-btn btn-deactivate" data-label="Désactiver">Désactiver</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
     <!-- ==================== MONITORING ==================== -->
     <section id="monitoring" class="section">
       <div class="section-heading">
-        <div><p class="eyebrow">Observabilit&eacute; V3</p><h3>Monitoring Prometheus &amp; Grafana</h3></div>
+        <div><p class="eyebrow">Observabilité V5</p><h3>Monitoring Prometheus &amp; Grafana</h3></div>
       </div>
       <div class="monitoring-grid">
-        <article class="monitor-card"><span class="monitor-icon">/metrics</span><h4>Endpoint Prometheus</h4><p>L&rsquo;API expose les m&eacute;triques HTTP et Python via FastAPI Instrumentator.</p></article>
+        <article class="monitor-card"><span class="monitor-icon">/metrics</span><h4>Endpoint Prometheus</h4><p>L'API expose les métriques HTTP et Python via FastAPI Instrumentator.</p></article>
         <article class="monitor-card"><span class="monitor-icon">UP</span><h4>Prometheus target</h4><p>Prometheus interroge accessguard-api:8000 toutes les 15 secondes.</p></article>
-        <article class="monitor-card"><span class="monitor-icon">Grafana</span><h4>Dashboard V3</h4><p>Visualisation du statut du service et des m&eacute;triques HTTP collect&eacute;es.</p></article>
+        <article class="monitor-card"><span class="monitor-icon">Grafana</span><h4>Dashboard V5</h4><p>Visualisation du statut du service et des métriques HTTP collectées.</p></article>
       </div>
     </section>
+
   </main>
+  <script src="app.js"></script>
 </body>
 </html>

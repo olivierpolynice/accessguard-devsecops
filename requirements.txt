@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pytest
+httpx
+bcrypt==4.3.0
+PyJWT
+prometheus-fastapi-instrumentator
+prometheus-client
+passlib[bcrypt]==1.7.4
+pydantic[email]
+python-jose[cryptography]

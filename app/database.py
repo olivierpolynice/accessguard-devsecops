@@ -1,10 +1,16 @@
-from pathlib import Path
-import sqlite3
 import os
+import sqlite3
+from pathlib import Path
+
 from app.schemas import AccessGrant, AccessRequest, AuditLog
 
 
+# ============================================================
+# Configuration SQLite
+# ============================================================
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 DATABASE_PATH = Path(
     os.getenv(
         "ACCESSGUARD_DATABASE_PATH",
@@ -14,18 +20,64 @@ DATABASE_PATH = Path(
 
 
 def get_connection() -> sqlite3.Connection:
-    """Ouvre une connexion SQLite avec accès aux colonnes par nom."""
+    """
+    Ouvre une connexion SQLite.
+
+    Les colonnes peuvent être lues par leur nom :
+    row["email"], row["role"], etc.
+    """
     connection = sqlite3.connect(DATABASE_PATH)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+
     return connection
 
 
+# Alias conservé pour une éventuelle ancienne utilisation.
+def get_db_connection() -> sqlite3.Connection:
+    return get_connection()
+
+
+# ============================================================
+# Initialisation de la base
+# ============================================================
+
 def initialize_database() -> None:
-    """Crée les tables AccessGuard si elles n'existent pas encore."""
+    """
+    Crée toutes les tables AccessGuard.
+    """
     with get_connection() as connection:
         connection.executescript(
             """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+
+                role TEXT NOT NULL CHECK (
+                    role IN (
+                        'employee',
+                        'manager',
+                        'it_admin',
+                        'security_admin'
+                    )
+                ),
+
+                is_active INTEGER NOT NULL DEFAULT 1 CHECK (
+                    is_active IN (0, 1)
+                ),
+
+                created_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP,
+
+                updated_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_users_email
+            ON users(email);
+
+
             CREATE TABLE IF NOT EXISTS access_requests (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 requester_email TEXT NOT NULL,
@@ -38,6 +90,7 @@ def initialize_database() -> None:
                 created_at TEXT NOT NULL
             );
 
+
             CREATE TABLE IF NOT EXISTS access_grants (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 request_id INTEGER NOT NULL,
@@ -48,8 +101,11 @@ def initialize_database() -> None:
                 granted_at TEXT NOT NULL,
                 expires_at TEXT NOT NULL,
                 revoked_at TEXT,
-                FOREIGN KEY (request_id) REFERENCES access_requests(id)
+
+                FOREIGN KEY (request_id)
+                    REFERENCES access_requests(id)
             );
+
 
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,9 +119,21 @@ def initialize_database() -> None:
             """
         )
 
+        connection.commit()
 
-def _to_access_request(row: sqlite3.Row) -> AccessRequest:
-    """Convertit une ligne SQLite en schéma Pydantic."""
+
+# Alias conservé pour les anciennes commandes.
+def init_database() -> None:
+    initialize_database()
+
+
+# ============================================================
+# Conversion des lignes SQLite
+# ============================================================
+
+def _to_access_request(
+    row: sqlite3.Row,
+) -> AccessRequest:
     return AccessRequest(
         id=row["id"],
         requester_email=row["requester_email"],
@@ -79,8 +147,9 @@ def _to_access_request(row: sqlite3.Row) -> AccessRequest:
     )
 
 
-def _to_access_grant(row: sqlite3.Row) -> AccessGrant:
-    """Convertit une ligne SQLite en schéma Pydantic."""
+def _to_access_grant(
+    row: sqlite3.Row,
+) -> AccessGrant:
     return AccessGrant(
         id=row["id"],
         request_id=row["request_id"],
@@ -94,8 +163,9 @@ def _to_access_grant(row: sqlite3.Row) -> AccessGrant:
     )
 
 
-def _to_audit_log(row: sqlite3.Row) -> AuditLog:
-    """Convertit une ligne SQLite en schéma Pydantic."""
+def _to_audit_log(
+    row: sqlite3.Row,
+) -> AuditLog:
     return AuditLog(
         id=row["id"],
         actor_email=row["actor_email"],
@@ -107,8 +177,13 @@ def _to_audit_log(row: sqlite3.Row) -> AuditLog:
     )
 
 
-def save_access_request(access_request: AccessRequest) -> AccessRequest:
-    """Enregistre une demande d'accès et retourne sa version persistée."""
+# ============================================================
+# Demandes d'accès
+# ============================================================
+
+def save_access_request(
+    access_request: AccessRequest,
+) -> AccessRequest:
     with get_connection() as connection:
         cursor = connection.execute(
             """
@@ -135,26 +210,39 @@ def save_access_request(access_request: AccessRequest) -> AccessRequest:
                 access_request.created_at.isoformat(),
             ),
         )
+
         request_id = int(cursor.lastrowid)
+        connection.commit()
 
-    return access_request.model_copy(update={"id": request_id})
+    return access_request.model_copy(
+        update={
+            "id": request_id,
+        }
+    )
 
 
-def get_access_request_from_database(request_id: int) -> AccessRequest | None:
-    """Retourne une demande persistée ou None si elle n'existe pas."""
+def get_access_request_from_database(
+    request_id: int,
+) -> AccessRequest | None:
     with get_connection() as connection:
         row = connection.execute(
-            "SELECT * FROM access_requests WHERE id = ?",
+            """
+            SELECT *
+            FROM access_requests
+            WHERE id = ?
+            """,
             (request_id,),
         ).fetchone()
 
-    return _to_access_request(row) if row is not None else None
+    if row is None:
+        return None
+
+    return _to_access_request(row)
 
 
 def get_access_requests_from_database(
     requester_email: str | None = None,
 ) -> list[AccessRequest]:
-    """Retourne toutes les demandes ou celles d'un utilisateur précis."""
     query = "SELECT * FROM access_requests"
     parameters: tuple[str, ...] = ()
 
@@ -165,30 +253,51 @@ def get_access_requests_from_database(
     query += " ORDER BY id ASC"
 
     with get_connection() as connection:
-        rows = connection.execute(query, parameters).fetchall()
+        rows = connection.execute(
+            query,
+            parameters,
+        ).fetchall()
 
-    return [_to_access_request(row) for row in rows]
+    return [
+        _to_access_request(row)
+        for row in rows
+    ]
 
 
 def update_access_request_status(
     request_id: int,
     new_status: str,
 ) -> AccessRequest | None:
-    """Met à jour le statut d'une demande persistée."""
     with get_connection() as connection:
         cursor = connection.execute(
-            "UPDATE access_requests SET status = ? WHERE id = ?",
-            (new_status, request_id),
+            """
+            UPDATE access_requests
+            SET status = ?
+            WHERE id = ?
+            """,
+            (
+                new_status,
+                request_id,
+            ),
         )
+
+        connection.commit()
 
     if cursor.rowcount == 0:
         return None
 
-    return get_access_request_from_database(request_id)
+    return get_access_request_from_database(
+        request_id
+    )
 
 
-def save_access_grant(access_grant: AccessGrant) -> AccessGrant:
-    """Enregistre un accès attribué et retourne sa version persistée."""
+# ============================================================
+# Accès attribués
+# ============================================================
+
+def save_access_grant(
+    access_grant: AccessGrant,
+) -> AccessGrant:
     with get_connection() as connection:
         cursor = connection.execute(
             """
@@ -219,26 +328,39 @@ def save_access_grant(access_grant: AccessGrant) -> AccessGrant:
                 ),
             ),
         )
+
         grant_id = int(cursor.lastrowid)
+        connection.commit()
 
-    return access_grant.model_copy(update={"id": grant_id})
+    return access_grant.model_copy(
+        update={
+            "id": grant_id,
+        }
+    )
 
 
-def get_access_grant_from_database(grant_id: int) -> AccessGrant | None:
-    """Retourne un accès persistant ou None s'il n'existe pas."""
+def get_access_grant_from_database(
+    grant_id: int,
+) -> AccessGrant | None:
     with get_connection() as connection:
         row = connection.execute(
-            "SELECT * FROM access_grants WHERE id = ?",
+            """
+            SELECT *
+            FROM access_grants
+            WHERE id = ?
+            """,
             (grant_id,),
         ).fetchone()
 
-    return _to_access_grant(row) if row is not None else None
+    if row is None:
+        return None
+
+    return _to_access_grant(row)
 
 
 def get_access_grants_from_database(
     requester_email: str | None = None,
 ) -> list[AccessGrant]:
-    """Retourne tous les accès ou ceux d'un utilisateur précis."""
     query = "SELECT * FROM access_grants"
     parameters: tuple[str, ...] = ()
 
@@ -249,48 +371,74 @@ def get_access_grants_from_database(
     query += " ORDER BY id ASC"
 
     with get_connection() as connection:
-        rows = connection.execute(query, parameters).fetchall()
+        rows = connection.execute(
+            query,
+            parameters,
+        ).fetchall()
 
-    return [_to_access_grant(row) for row in rows]
+    return [
+        _to_access_grant(row)
+        for row in rows
+    ]
 
 
-def get_active_grant_for_request(request_id: int) -> AccessGrant | None:
-    """Retourne l'accès actif déjà associé à une demande."""
+def get_active_grant_for_request(
+    request_id: int,
+) -> AccessGrant | None:
     with get_connection() as connection:
         row = connection.execute(
             """
-            SELECT * FROM access_grants
-            WHERE request_id = ? AND status = 'ACTIVE'
+            SELECT *
+            FROM access_grants
+            WHERE request_id = ?
+              AND status = 'ACTIVE'
             """,
             (request_id,),
         ).fetchone()
 
-    return _to_access_grant(row) if row is not None else None
+    if row is None:
+        return None
+
+    return _to_access_grant(row)
 
 
 def revoke_access_grant(
     grant_id: int,
     revoked_at: str,
 ) -> AccessGrant | None:
-    """Révoque un accès actif et retourne la version mise à jour."""
     with get_connection() as connection:
         cursor = connection.execute(
             """
             UPDATE access_grants
-            SET status = 'REVOKED', revoked_at = ?
-            WHERE id = ? AND status = 'ACTIVE'
+            SET
+                status = 'REVOKED',
+                revoked_at = ?
+            WHERE id = ?
+              AND status = 'ACTIVE'
             """,
-            (revoked_at, grant_id),
+            (
+                revoked_at,
+                grant_id,
+            ),
         )
+
+        connection.commit()
 
     if cursor.rowcount == 0:
         return None
 
-    return get_access_grant_from_database(grant_id)
+    return get_access_grant_from_database(
+        grant_id
+    )
 
 
-def save_audit_log(audit_log: AuditLog) -> AuditLog:
-    """Enregistre une trace d'audit dans SQLite."""
+# ============================================================
+# Logs d'audit
+# ============================================================
+
+def save_audit_log(
+    audit_log: AuditLog,
+) -> AuditLog:
     with get_connection() as connection:
         cursor = connection.execute(
             """
@@ -313,35 +461,91 @@ def save_audit_log(audit_log: AuditLog) -> AuditLog:
                 audit_log.created_at.isoformat(),
             ),
         )
-        audit_id = int(cursor.lastrowid)
 
-    return audit_log.model_copy(update={"id": audit_id})
+        audit_id = int(cursor.lastrowid)
+        connection.commit()
+
+    return audit_log.model_copy(
+        update={
+            "id": audit_id,
+        }
+    )
 
 
 def get_audit_logs_from_database() -> list[AuditLog]:
-    """Retourne les logs d'audit stockés dans SQLite."""
     with get_connection() as connection:
         rows = connection.execute(
-            "SELECT * FROM audit_logs ORDER BY id ASC"
+            """
+            SELECT *
+            FROM audit_logs
+            ORDER BY id ASC
+            """
         ).fetchall()
 
-    return [_to_audit_log(row) for row in rows]
+    return [
+        _to_audit_log(row)
+        for row in rows
+    ]
 
+
+# ============================================================
+# Nettoyage des tests
+# ============================================================
 
 def clear_database() -> None:
-    """Supprime les données de test de toutes les tables SQLite."""
+    """
+    Supprime les données créées par les tests.
+
+    Les quatre comptes de démonstration sont conservés.
+    """
+    demo_emails = (
+        "alice.employee@asteriatech.local",
+        "marc.manager@asteriatech.local",
+        "ines.itadmin@asteriatech.local",
+        "paul.security@asteriatech.local",
+    )
+
     with get_connection() as connection:
-        connection.execute("DELETE FROM audit_logs")
-        connection.execute("DELETE FROM access_grants")
-        connection.execute("DELETE FROM access_requests")
+        connection.execute(
+            "DELETE FROM audit_logs"
+        )
+
+        connection.execute(
+            "DELETE FROM access_grants"
+        )
+
+        connection.execute(
+            "DELETE FROM access_requests"
+        )
+
+        connection.execute(
+            """
+            DELETE FROM users
+            WHERE email NOT IN (?, ?, ?, ?)
+            """,
+            demo_emails,
+        )
+
         connection.execute(
             """
             DELETE FROM sqlite_sequence
-            WHERE name IN ('audit_logs', 'access_grants', 'access_requests')
+            WHERE name IN (
+                'audit_logs',
+                'access_grants',
+                'access_requests'
+            )
             """
         )
 
+        connection.commit()
+
+
+# ============================================================
+# Exécution directe
+# ============================================================
 
 if __name__ == "__main__":
     initialize_database()
-    print(f"Base SQLite initialisée : {DATABASE_PATH}")
+    print(
+        f"Base SQLite initialisée : {DATABASE_PATH}"
+    )

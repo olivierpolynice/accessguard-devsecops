@@ -1,437 +1,250 @@
-# AccessGuard DevSecOps
+1. README.md
+AccessGuard
 
-API pédagogique de gestion et de gouvernance des accès internes pour l’entreprise fictive **AsteriaTech**.
+AccessGuard est une application pédagogique de gestion et de gouvernance des accès internes pour l’entreprise fictive AsteriaTech.
 
-AccessGuard met en œuvre un workflow de demande d’accès à une ressource interne, avec authentification JWT, contrôle d’accès basé sur les rôles (RBAC), journalisation des actions sensibles et tests automatisés.
+Le projet permet de gérer :
 
-> **État du projet : V2 — JWT/RBAC et contrôles de sécurité validés**
+l’authentification des utilisateurs ;
+les rôles et autorisations RBAC ;
+les demandes d’accès ;
+la validation par un manager ;
+l’attribution et la révocation des accès ;
+les journaux d’audit ;
+la supervision avec Prometheus et Grafana ;
+l’administration des utilisateurs depuis la version V5.
+Technologies utilisées
+Backend
+Python 3.12
+FastAPI
+SQLite
+Pydantic
+JWT
+Passlib / bcrypt
+Pytest
+Frontend
+HTML
+CSS
+JavaScript
+DevOps et supervision
+Docker
+Docker Compose
+GitHub Actions
+Prometheus
+Grafana
+Lancer le projet
+Prérequis
 
----
+Installer les outils suivants :
 
-## Objectifs du projet
-
-Le projet permet de démontrer les principes suivants :
-
-- authentification par JWT ;
-- contrôle d’accès par rôles (RBAC) ;
-- gestion d’une demande d’accès de bout en bout ;
-- validation par un manager ;
-- attribution et révocation d’un accès par les rôles autorisés ;
-- journalisation des actions sensibles ;
-- tests automatisés avec Pytest ;
-- intégration continue avec GitHub Actions.
-
----
-
-## Workflow fonctionnel
-
-1. Un **employee** s’authentifie et crée une demande d’accès à une ressource.
-2. Un **manager** approuve ou refuse la demande.
-3. Un **it_admin** attribue l’accès après approbation.
-4. Un **it_admin** ou un **security_admin** peut révoquer un accès actif.
-5. Les actions sensibles sont enregistrées dans les logs d’audit.
-6. Les logs d’audit sont réservés aux rôles autorisés.
-
----
-
-## Architecture du projet
-
-```text
-accessguard-devsecops/
-├── .github/
-│   └── workflows/
-│       └── test.yml
-├── app/
-│   ├── auth.py
-│   ├── dependencies.py
-│   ├── main.py
-│   ├── schemas.py
-│   ├── security.py
-│   └── seed.py
-├── docs/
-│   ├── screenshots/
-│   │   └── rendu-07/
-│   ├── V2_PLAN.md
-│   └── V2_RBAC_MATRIX.md
-├── tests/
-│   ├── test_accessguard.py
-│   ├── test_auth.py
-│   └── test_security.py
-├── .env.example
-├── .gitignore
-├── README.md
-└── requirements.txt
-```
-
----
-
-## Technologies utilisées
-
-| Domaine | Technologies |
-|---|---|
-| API | Python, FastAPI |
-| Validation des données | Pydantic |
-| Authentification | JWT / PyJWT |
-| Hachage des mots de passe | bcrypt |
-| Tests | Pytest, FastAPI TestClient |
-| CI | GitHub Actions |
-| Documentation API | Swagger / OpenAPI |
-
----
-
-## Installation locale
-
-### Prérequis
-
-- Python 3.11 ou version compatible ;
-- Git ;
-- Visual Studio Code recommandé ;
-- un environnement virtuel Python.
-
-### 1. Cloner le dépôt
-
-```powershell
-git clone https://github.com/olivierpolynice/accessguard-devsecops.git
+Git
+Docker Desktop
+Docker Compose
+1. Cloner le dépôt
+git clone <URL_DU_DEPOT>
 cd accessguard-devsecops
-```
+2. Créer le fichier d’environnement
 
-### 2. Créer et activer l’environnement virtuel
+Créer un fichier .env à la racine du projet si celui-ci n’existe pas.
 
-Sous PowerShell :
+Exemple :
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+SECRET_KEY=accessguard-secret-key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+DATABASE_URL=sqlite:///./data/accessguard.db
 
-### 3. Installer les dépendances
+Ne pas utiliser cette clé secrète en production.
 
-```powershell
-python -m pip install --upgrade pip
-python -m pip install -r app/requirements.txt
-```
+3. Démarrer les services
+docker compose up --build
 
-Si le fichier `requirements.txt` est placé à la racine du dépôt, utilisez plutôt :
+Pour lancer les services en arrière-plan :
 
-```powershell
-python -m pip install -r requirements.txt
-```
+docker compose up --build -d
+4. Vérifier les conteneurs
+docker compose ps
+5. Accéder aux services
+Service	Adresse
+API AccessGuard	http://localhost:8000
+Documentation Swagger	http://localhost:8000/docs
+Documentation ReDoc	http://localhost:8000/redoc
+Métriques Prometheus	http://localhost:8000/metrics
+Prometheus	http://localhost:9090
+Grafana	http://localhost:3000
+Arrêter le projet
+docker compose down
 
-### 4. Lancer l’API
+Pour supprimer également les volumes :
 
-```powershell
-python -m uvicorn app.main:app --reload
-```
+docker compose down -v
 
-L’API est ensuite disponible sur :
+Attention : la suppression des volumes peut supprimer les données SQLite persistantes.
 
-```text
-http://127.0.0.1:8000
-```
+Comptes de test
 
-La documentation Swagger est disponible sur :
+Les comptes suivants sont créés automatiquement par le script de seed.
 
-```text
-http://127.0.0.1:8000/docs
-```
+Rôle	Adresse email	Mot de passe
+Employee	alice.employee@asteriatech.local	AccessGuard123!
+Manager	marc.manager@asteriatech.local	AccessGuard123!
+IT Admin	ines.itadmin@asteriatech.local	AccessGuard123!
+Security Admin	paul.security@asteriatech.local	AccessGuard123!
 
----
+Ces identifiants sont réservés à l’environnement pédagogique.
 
-## Authentification JWT
-
-La connexion est réalisée via :
-
-```text
+Authentification
+Connexion
 POST /auth/login
-```
 
-Exemple de body :
+Exemple de requête :
 
-```json
 {
-  "email": "alice.employee@asteriatech.local",
-  "password": "Employee123!"
+  "email": "paul.security@asteriatech.local",
+  "password": "AccessGuard123!"
 }
-```
 
-La réponse contient :
+La réponse contient un jeton JWT :
 
-```json
 {
-  "access_token": "eyJ...",
-  "token_type": "bearer",
-  "role": "employee"
+  "access_token": "<JWT>",
+  "token_type": "bearer"
 }
-```
 
-Le token est ensuite transmis dans l’en-tête HTTP :
-
-```text
-Authorization: Bearer <access_token>
-```
-
-Dans Swagger, utiliser le bouton **Authorize**, coller le token JWT, puis valider.
-
----
-
-## Comptes de démonstration
-
-> Ces comptes sont prévus uniquement pour l’environnement pédagogique local.
-
-| Utilisateur | E-mail | Mot de passe | Rôle |
-|---|---|---|---|
-| Alice Employee | `alice.employee@asteriatech.local` | `Employee123!` | `employee` |
-| Marc Manager | `marc.manager@asteriatech.local` | `Manager123!` | `manager` |
-| Inès IT Admin | `ines.itadmin@asteriatech.local` | `Admin123!` | `it_admin` |
-| Sam Security | `sam.security@asteriatech.local` | `Security123!` | `security_admin` |
-
----
-
-## Matrice RBAC V2
-
-| Endpoint / action | employee | manager | it_admin | security_admin |
-|---|---:|---:|---:|---:|
-| `POST /auth/login` | Oui | Oui | Oui | Oui |
-| `GET /health` | Oui | Oui | Oui | Oui |
-| `GET /resources` | Oui | Oui | Oui | Oui |
-| `POST /access-requests` | Oui | Oui | Oui | Oui |
-| `GET /access-requests` | Ses demandes | Oui | Oui | Oui |
-| `GET /access-requests/{request_id}` | Ses demandes | Oui | Oui | Oui |
-| `POST /access-requests/{request_id}/manager-decision` | Non | Oui | Non | Non |
-| `POST /access-requests/{request_id}/grant` | Non | Non | Oui | Non |
-| `GET /access-grants` | Ses accès | Non | Oui | Oui |
-| `POST /access-grants/{grant_id}/revoke` | Non | Non | Oui | Oui |
-| `GET /audit-logs` | Non | Non | Oui | Oui |
-
-### Codes HTTP attendus
-
-| Situation | Résultat attendu |
-|---|---|
-| Token absent | `401 Unauthorized` |
-| Token invalide ou expiré | `401 Unauthorized` |
-| Token valide avec rôle insuffisant | `403 Forbidden` |
-| Token valide avec rôle autorisé | `200 OK` ou `201 Created` |
-| Ressource ou objet introuvable après authentification | `404 Not Found` |
-| Action incohérente avec l’état métier | `409 Conflict` |
-| Données invalides | `422 Unprocessable Content` |
-
----
-
-## Endpoints principaux
-
-### Authentification
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `POST` | `/auth/login` | Connexion et génération d’un token JWT |
-
-### Informations et ressources
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | Informations de base de l’API |
-| `GET` | `/health` | Vérification de disponibilité |
-| `GET` | `/resources` | Liste des ressources actives |
-
-### Demandes d’accès
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `POST` | `/access-requests` | Créer une demande d’accès |
-| `GET` | `/access-requests` | Lister les demandes selon le rôle |
-| `GET` | `/access-requests/{request_id}` | Consulter une demande |
-| `POST` | `/access-requests/{request_id}/manager-decision` | Approuver ou refuser une demande |
-
-### Accès attribués
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `POST` | `/access-requests/{request_id}/grant` | Attribuer un accès après approbation |
-| `GET` | `/access-grants` | Lister les accès attribués |
-| `POST` | `/access-grants/{grant_id}/revoke` | Révoquer un accès actif |
-
-### Audit
-
-| Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/audit-logs` | Consulter les logs d’audit, réservé aux administrateurs |
-
----
-
-## Exemples de scénarios V2
-
-### 1. Tentative sans JWT
-
-```text
-GET /audit-logs
-```
-
-Résultat :
-
-```text
-401 Unauthorized
-```
-
-### 2. JWT valide mais rôle insuffisant
-
-Un utilisateur `employee` tente d’attribuer un accès :
-
-```text
-POST /access-requests/1/grant
-```
-
-Résultat :
-
-```text
-403 Forbidden
-```
-
-### 3. JWT valide et rôle autorisé
-
-Un utilisateur `it_admin` consulte les logs :
-
-```text
-GET /audit-logs
-```
-
-Résultat :
-
-```text
-200 OK
-```
-
-### 4. Workflow complet
-
-1. Connexion `employee`.
-2. Création d’une demande d’accès.
-3. Connexion `manager`.
-4. Approbation de la demande.
-5. Connexion `it_admin`.
-6. Attribution de l’accès.
-7. Révocation éventuelle par `it_admin` ou `security_admin`.
-8. Consultation des logs d’audit par un rôle autorisé.
-
----
-
-## Tests automatisés
-
-Exécuter les tests depuis la racine du projet :
-
-```powershell
-python -m pytest -v
-```
-
-Résultat de validation V2 :
-
-```text
-31 passed
-```
-
-Les tests couvrent notamment :
-
-- génération de token JWT ;
-- authentification ;
-- accès sans token (`401`) ;
-- accès avec mauvais rôle (`403`) ;
-- création de demandes ;
-- validation manager ;
-- attribution d’accès ;
-- révocation d’accès ;
-- logs d’audit ;
-- erreurs `404`, `409` et `422`.
-
-> Un avertissement lié à `TestClient` / `httpx` peut apparaître. Il n’empêche pas l’exécution ni la réussite des tests.
-
----
-
-## Intégration continue
-
-Le dépôt contient un workflow GitHub Actions qui exécute les tests automatiquement :
-
-- à chaque `push` sur `main` ;
-- à chaque `push` sur une branche `feature/**` ;
-- à chaque Pull Request vers `main`.
-
-Avant toute fusion dans `main`, vérifier :
-
-1. que les tests locaux passent ;
-2. que les checks GitHub Actions sont verts ;
-3. que la Pull Request ne contient aucun secret ;
-4. que la documentation et les captures sont ajoutées si nécessaire.
-
----
-
-## Preuves et captures V2
-
-Les captures de validation sont stockées dans :
-
-```text
-docs/screenshots/rendu-07/
-```
-
-Exemples de preuves attendues :
-
-| Capture | Preuve |
-|---|---|
-| `Capture-V2-02-Tests-automatises-JWT-RBAC-reussis.png` | Tests Pytest réussis |
-| `Capture-V2-03-Audit-logs-sans-JWT-401.png` | Audit refusé sans JWT |
-| `Capture-V2-04-Audit-logs-role-employee-403.png` | Audit refusé pour le rôle employee |
-| `Capture-V2-05-Audit-logs-it-admin-200.png` | Audit autorisé pour it_admin |
-| `Capture-V2-06-Grant-sans-JWT-401.png` | Attribution refusée sans JWT |
-| `Capture-V2-07-Grant-role-employee-403.png` | Attribution refusée pour employee |
-| `Capture-V2-08-Creation-demande-access-employee-201.png` | Création d’une demande |
-| `Capture-V2-09-Decision-manager-approved-200.png` | Approbation manager |
-| `Capture-V2-10-Attribution-acces-it-admin-201.png` | Attribution par it_admin |
-| `Capture-V2-11-Revocation-acces-it-admin-200.png` | Révocation d’un accès |
-| `Capture-V2-12-Audit-logs-workflow-200.png` | Consultation des logs après le workflow |
-
----
-
-## Sécurité
-
-Les règles de sécurité appliquées dans la V2 sont les suivantes :
-
-- aucune route sensible ne doit être accessible sans token JWT ;
-- les rôles sont extraits depuis le token, pas depuis le body de la requête ;
-- les actions sensibles sont contrôlées avec RBAC ;
-- les opérations sensibles génèrent une trace d’audit ;
-- les mots de passe sont hachés avec bcrypt ;
-- les secrets sont lus depuis l’environnement avec une valeur locale de démonstration ;
-- aucun token JWT complet ne doit être enregistré dans les logs ;
-- les modifications passent par des branches et Pull Requests.
-
----
-
-## Limites actuelles
-
-Cette version reste une API pédagogique locale :
-
-- les données sont conservées en mémoire ;
-- un redémarrage de l’API réinitialise les demandes, accès et audits ;
-- aucune base de données persistante n’est encore utilisée ;
-- aucune interface front-end n’est implémentée ;
-- aucun déploiement cloud n’est inclus dans cette V2.
-
----
-
-## Évolutions possibles — V3
-
-Les améliorations suivantes pourront être ajoutées dans une V3 :
-
-- persistance SQLite ou PostgreSQL ;
-- Dockerfile et Docker Compose ;
-- gestion de migrations ;
-- dashboard Prometheus / Grafana ;
-- journalisation structurée ;
-- gestion de secrets via Vault ou variables CI ;
-- scan de sécurité des dépendances ;
-- déploiement cloud ;
-- interface front-end ;
-- intégration LDAP, Active Directory ou Azure Entra ID.
-
----
-
-## Auteur
-
-**Olivier Polynice**  
-Projet pédagogique Master Réseaux, Cybersécurité & Cloud.
+Dans Swagger, cliquer sur Authorize, puis saisir :
+
+Bearer <JWT>
+Routes principales
+Santé et supervision
+Méthode	Route	Description
+GET	/health	Vérifie l’état de l’API
+GET	/metrics	Expose les métriques Prometheus
+Authentification
+Méthode	Route	Description
+POST	/auth/login	Authentifie un utilisateur
+Ressources
+Méthode	Route	Description
+GET	/resources	Liste les ressources disponibles
+Demandes d’accès
+Méthode	Route	Description
+POST	/access-requests	Crée une demande d’accès
+GET	/access-requests	Liste les demandes
+PATCH	/access-requests/{id}/manager-decision	Accepte ou refuse une demande
+Attributions d’accès
+Méthode	Route	Description
+GET	/access-grants	Liste les accès attribués
+POST	/access-requests/{id}/grant	Attribue un accès approuvé
+PATCH	/access-grants/{id}/revoke	Révoque un accès
+Audit
+Méthode	Route	Description
+GET	/audit-logs	Consulte les journaux d’audit
+Routes d’administration des utilisateurs — V5
+
+Toutes les routes /users sont réservées au rôle security_admin.
+
+Méthode	Route	Description
+GET	/users	Liste tous les utilisateurs
+GET	/users/{user_id}	Consulte un utilisateur
+POST	/users	Crée un utilisateur
+PATCH	/users/{user_id}/role	Modifie le rôle d’un utilisateur
+PATCH	/users/{user_id}/status	Active ou désactive un utilisateur
+
+Les mots de passe ne sont jamais retournés par l’API.
+
+Règles RBAC
+
+AccessGuard applique un contrôle d’accès basé sur les rôles.
+
+Action	Employee	Manager	IT Admin	Security Admin
+Se connecter	Oui	Oui	Oui	Oui
+Voir les ressources	Oui	Oui	Oui	Oui
+Créer une demande d’accès	Oui	Non	Non	Non
+Accepter ou refuser une demande	Non	Oui	Non	Non
+Attribuer un accès	Non	Non	Oui	Non
+Révoquer un accès	Non	Non	Oui	Non
+Consulter les journaux d’audit	Non	Non	Non	Oui
+Administrer les utilisateurs	Non	Non	Non	Oui
+Codes d’erreur principaux
+Code	Signification
+200	Requête réussie
+201	Ressource créée
+401	Authentification absente ou invalide
+403	Rôle non autorisé
+404	Ressource introuvable
+409	Conflit, par exemple adresse email déjà utilisée
+422	Données de requête invalides
+Tester le projet
+Tests automatisés dans Docker
+docker compose exec accessguard-api pytest -v
+Tests locaux
+
+Créer puis activer un environnement virtuel :
+
+python -m venv .venv
+
+Sous Windows PowerShell :
+
+.\.venv\Scripts\Activate.ps1
+
+Installer les dépendances :
+
+pip install -r requirements.txt
+
+Lancer les tests :
+
+pytest -v
+
+Lancer uniquement les tests liés aux utilisateurs :
+
+pytest -v tests/test_users.py
+Vérifier la qualité du code
+
+Selon les outils présents dans le projet :
+
+ruff check .
+black --check .
+bandit -r app
+Scénario de démonstration V5
+Se connecter avec le compte security_admin.
+Récupérer le jeton JWT.
+Appeler GET /users.
+Créer un nouvel utilisateur avec POST /users.
+Vérifier qu’une adresse email existante retourne 409.
+Modifier le rôle de l’utilisateur.
+Désactiver l’utilisateur.
+Vérifier que l’utilisateur désactivé ne peut plus se connecter.
+Réactiver l’utilisateur.
+Vérifier les journaux et résultats des tests.
+Captures disponibles
+
+Les captures de validation disponibles comprennent notamment :
+
+Capture	Description
+02_v5_users_table_created.png	Création et structure de la table users
+03_v5_login_sqlite_success.png	Connexion réussie avec un utilisateur SQLite
+04_v5_inactive_user_denied.png	Refus de connexion pour un utilisateur désactivé
+05_v5_security_users_admin.png	Administration des utilisateurs par le Security Admin
+
+D’autres captures peuvent être ajoutées dans un dossier comme :
+
+docs/screenshots/v5/
+Limites restantes
+
+La version actuelle présente encore plusieurs limites :
+
+aucune fonctionnalité de réinitialisation de mot de passe ;
+aucun mécanisme de renouvellement de jeton JWT ;
+aucune authentification multifacteur ;
+absence de suppression définitive d’utilisateur ;
+interface graphique d’administration des utilisateurs encore limitée ou absente ;
+secrets de démonstration non adaptés à un environnement de production ;
+base SQLite adaptée à la démonstration, mais limitée pour un déploiement distribué ;
+gestion des sessions et révocation des jetons non implémentées ;
+couverture de tests à maintenir lors des prochaines évolutions ;
+observabilité et alertes encore perfectibles ;
+absence de gestion complète des migrations de base de données.
+Avertissement
+
+AccessGuard est un projet pédagogique.
+
+Les comptes, mots de passe, secrets JWT et configurations fournis dans ce dépôt ne doivent pas être réutilisés dans un environnement réel.

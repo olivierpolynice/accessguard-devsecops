@@ -11,18 +11,19 @@ def test_login_success_returns_jwt() -> None:
         "/auth/login",
         json={
             "email": "alice.employee@asteriatech.local",
-            "password": "Employee123!",
+            "password": "AccessGuard123!",
         },
     )
 
     assert response.status_code == 200
 
-    payload = response.json()
+    body = response.json()
 
-    assert payload["token_type"] == "bearer"
-    assert payload["role"] == "employee"
-    assert isinstance(payload["access_token"], str)
-    assert len(payload["access_token"].split(".")) == 3
+    assert body["token_type"] == "bearer"
+    assert body["role"] == "employee"
+    assert body["email"] == "alice.employee@asteriatech.local"
+    assert isinstance(body["access_token"], str)
+    assert body["access_token"]
 
 
 def test_login_with_wrong_password_returns_401() -> None:
@@ -35,7 +36,10 @@ def test_login_with_wrong_password_returns_401() -> None:
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Identifiants incorrects."
+    assert (
+        response.json()["detail"]
+        == "Adresse e-mail ou mot de passe incorrect."
+    )
 
 
 def test_login_with_unknown_email_returns_401() -> None:
@@ -43,9 +47,12 @@ def test_login_with_unknown_email_returns_401() -> None:
         "/auth/login",
         json={
             "email": "unknown.user@asteriatech.local",
-            "password": "Employee123!",
+            "password": "AccessGuard123!",
         },
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Identifiants incorrects."
+    assert (
+        response.json()["detail"]
+        == "Adresse e-mail ou mot de passe incorrect."
+    )

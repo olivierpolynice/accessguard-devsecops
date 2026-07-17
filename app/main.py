@@ -5,6 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.auth import router as auth_router
+from app.metrics import (
+    access_grants_total,
+    access_requests_total,
+    access_revocations_total,
+    manager_approvals_total,
+    manager_refusals_total,
+)
 from app.database import (
     get_access_grant_from_database,
     get_access_grants_from_database,
@@ -536,6 +543,8 @@ def create_access_request(
         outcome="PENDING_MANAGER",
     )
 
+    access_requests_total.inc()
+
     return access_request
 
 
@@ -669,6 +678,11 @@ def manager_decision(
         ),
     )
 
+    if payload.decision == "APPROVED":
+        manager_approvals_total.inc()
+    elif payload.decision == "REFUSED":
+        manager_refusals_total.inc()
+
     return updated_request
 
 
@@ -766,6 +780,8 @@ def grant_access(
         entity_id=access_grant.id,
         outcome=payload.comment,
     )
+
+    access_grants_total.inc()
 
     return access_grant
 
@@ -869,6 +885,8 @@ def revoke_access(
         entity_id=updated_grant.id,
         outcome=payload.reason,
     )
+
+    access_revocations_total.inc()
 
     return updated_grant
 

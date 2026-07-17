@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
+from app.metrics import (
+    login_failure_total,
+    login_success_total,
+)
 from app.schemas import validate_internal_email
 from app.security import create_access_token, verify_password
 from app.user_repository import get_user_by_email_with_password
@@ -42,9 +46,11 @@ class TokenResponse(BaseModel):
 
 def raise_invalid_credentials() -> None:
     """
-    Retourne une erreur générique afin de ne pas révéler
-    si l'adresse e-mail existe dans la base.
+    Compte une connexion échouée et retourne une erreur générique
+    afin de ne pas révéler si l'adresse e-mail existe dans la base.
     """
+    login_failure_total.inc()
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Adresse e-mail ou mot de passe incorrect.",
@@ -81,6 +87,8 @@ def login(
         raise_invalid_credentials()
 
     if not user["is_active"]:
+        login_failure_total.inc()
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Ce compte utilisateur est désactivé.",
@@ -98,6 +106,8 @@ def login(
         user_id=user["id"],
         is_active=user["is_active"],
     )
+
+    login_success_total.inc()
 
     return TokenResponse(
         access_token=access_token,

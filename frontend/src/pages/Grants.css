@@ -1,0 +1,115 @@
+.grants-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.grants-header h1 {
+  margin-bottom: 8px;
+}
+
+.grants-header p {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.new-grant-button {
+  padding: 11px 16px;
+  color: #07111f;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  background-color: #38bdf8;
+  border: none;
+  border-radius: 8px;
+}
+
+.grants-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: collapse;
+  background-color: #11263d;
+}
+
+.grants-table th,
+.grants-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #334155;
+}
+
+.grants-table th {
+  color: #f8fafc;
+  background-color: #172f49;
+}
+
+.grants-table td {
+  color: #cbd5e1;
+}
+
+.grants-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.grants-table tbody tr:hover {
+  background-color: #16324d;
+}
+
+.grant-status {
+  display: inline-block;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.grant-status-active {
+  color: #86efac;
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+.grant-status-revoked {
+  color: #fca5a5;
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.revoke-grant-button {
+  padding: 9px 13px;
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  background-color: #dc2626;
+  border: none;
+  border-radius: 8px;
+}
+
+.revoke-grant-button:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  background-color: #334155;
+  opacity: 0.7;
+}
+
+.new-grant-button:hover,
+.revoke-grant-button:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+  .grants-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .new-grant-button {
+    width: 100%;
+  }
+
+  .grants-table {
+    min-width: 1050px;
+  }
+}

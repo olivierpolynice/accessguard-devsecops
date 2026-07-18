@@ -108,3 +108,35 @@ code {
   font-size: 13px;
   color: #94a3b8;
 }
+/* =========================================================
+   TABLEAUX RESPONSIVES
+   ========================================================= */
+
+.table-container {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-container table {
+  width: 100%;
+  min-width: 750px;
+  border-collapse: collapse;
+}
+
+.table-container th,
+.table-container td {
+  padding: 14px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    width: 100%;
+    max-width: calc(100vw - 32px);
+  }
+}

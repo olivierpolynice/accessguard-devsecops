@@ -1,0 +1,101 @@
+.audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.audit-header h1 {
+  margin-bottom: 8px;
+}
+
+.audit-header p {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.export-audit-button {
+  padding: 11px 16px;
+  color: #07111f;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  background-color: #38bdf8;
+  border: none;
+  border-radius: 8px;
+}
+
+.audit-table {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+  background-color: #11263d;
+}
+
+.audit-table th,
+.audit-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #334155;
+}
+
+.audit-table th {
+  color: #f8fafc;
+  background-color: #172f49;
+}
+
+.audit-table td {
+  color: #cbd5e1;
+}
+
+.audit-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.audit-table tbody tr:hover {
+  background-color: #16324d;
+}
+
+.audit-result {
+  display: inline-block;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.audit-result-success {
+  color: #86efac;
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+.audit-result-denied {
+  color: #fdba74;
+  background-color: rgba(249, 115, 22, 0.15);
+}
+
+.audit-result-failure {
+  color: #fca5a5;
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.export-audit-button:hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+  .audit-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .export-audit-button {
+    width: 100%;
+  }
+
+  .audit-table {
+    min-width: 1000px;
+  }
+}

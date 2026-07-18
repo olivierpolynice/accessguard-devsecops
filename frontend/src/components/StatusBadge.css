@@ -1,0 +1,55 @@
+.status-badge {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.status-pending {
+  color: #fde68a;
+  background: rgb(245 158 11 / 16%);
+  border-color: rgb(245 158 11 / 45%);
+}
+
+.status-approved {
+  color: #bae6fd;
+  background: rgb(14 165 233 / 16%);
+  border-color: rgb(56 189 248 / 45%);
+}
+
+.status-rejected {
+  color: #fecaca;
+  background: rgb(220 38 38 / 18%);
+  border-color: rgb(248 113 113 / 48%);
+}
+
+.status-active {
+  color: #bbf7d0;
+  background: rgb(22 163 74 / 18%);
+  border-color: rgb(74 222 128 / 42%);
+}
+
+.status-revoked {
+  color: #fecaca;
+  background: rgb(127 29 29 / 38%);
+  border-color: rgb(239 68 68 / 38%);
+}
+
+.status-inactive {
+  color: #cbd5e1;
+  background: rgb(71 85 105 / 38%);
+  border-color: #64748b;
+}
+
+.status-unknown {
+  color: #e2e8f0;
+  background: rgb(71 85 105 / 28%);
+  border-color: #64748b;
+}

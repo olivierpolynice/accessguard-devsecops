@@ -1,90 +1,92 @@
-# AccessGuard V5 — Résumé du sprint
+# AccessGuard V5 — Bilan du sprint
 
-## 1. Objectif du sprint
+## 1. Présentation
 
-La V5 a pour objectif d’ajouter une gestion persistante des utilisateurs,
-une authentification basée sur SQLite, des contrôles de sécurité renforcés,
-des tests automatisés et des métriques métier exploitables dans Grafana.
+La V5 d’AccessGuard marque une étape importante dans l’évolution du projet. Elle complète les fonctionnalités précédentes avec une administration sécurisée des utilisateurs, une interface frontend adaptée aux rôles, des métriques métier et une validation technique renforcée.
 
-## 2. Répartition initiale
+Cette version a été réalisée dans le cadre du projet pédagogique DevSecOps consacré à l’entreprise fictive AsteriaTech.
 
-### Olivier Polynice
+## 2. Objectifs de la V5
 
-- intégration de la table users ;
-- authentification SQLite ;
-- gestion des utilisateurs actifs et inactifs ;
-- intégration backend ;
-- documentation et validation.
+Les objectifs principaux étaient :
 
-### Irina
+- ajouter la gestion persistante des utilisateurs ;
+- sécuriser les routes d’administration ;
+- renforcer le contrôle d’accès par rôles ;
+- finaliser le workflow des demandes d’accès ;
+- améliorer l’interface React ;
+- ajouter des métriques métier ;
+- intégrer Prometheus et Grafana ;
+- renforcer les tests et la CI/CD ;
+- produire des preuves et une documentation complète.
 
-- tests automatisés ;
-- CI/CD ;
-- contrôles qualité ;
-- scans de sécurité ;
-- validation GitHub Actions.
+## 3. Fonctionnalités réalisées
 
-### Yazid El-Bak
+### 3.1 Gestion des utilisateurs
 
-- suivi Scrum ;
-- endpoints users ;
-- métriques métier ;
-- dashboard Grafana V5 ;
-- validation Docker.
+La V5 introduit une table `users` contenant :
 
-### Élodie
+- un identifiant unique ;
+- une adresse e-mail unique ;
+- une empreinte sécurisée du mot de passe ;
+- un rôle ;
+- un statut actif ou inactif ;
+- les dates de création et de modification.
 
-- interface utilisateur ;
-- amélioration visuelle ;
-- expérience utilisateur ;
-- documentation frontend.
+Les rôles disponibles sont :
 
-## 3. Adaptations réalisées
+- `employee` ;
+- `manager` ;
+- `it_admin` ;
+- `security_admin`.
 
-En raison d’un problème matériel rencontré par Yazid, Olivier a repris
-les tâches restantes liées aux métriques métier, à Grafana et à la
-documentation Scrum.
+Le rôle `security_admin` peut :
 
-Les routes users initialement prévues dans le lot Yazid ont également été
-intégrées dans la branche Olivier afin de garantir la livraison complète
-de la V5.
+- consulter les utilisateurs ;
+- consulter un utilisateur précis ;
+- créer un utilisateur ;
+- modifier son rôle ;
+- activer ou désactiver son compte.
 
-## 4. Résultats obtenus
+Les mots de passe et les valeurs `password_hash` ne sont jamais exposés dans les réponses de l’API ni dans l’interface.
 
-- table users persistante dans SQLite ;
-- comptes utilisateurs de démonstration ;
-- login basé sur la base de données ;
-- blocage des utilisateurs inactifs ;
-- administration des utilisateurs par security_admin ;
-- tests backend validés ;
-- frontend compilé ;
-- Docker Compose validé ;
-- contrôles CI/CD et sécurité validés ;
-- métriques métier ajoutées ;
-- dashboard Grafana V5 mis à jour.
+### 3.2 Routes utilisateurs
 
-## 5. Blocages rencontrés
+Les routes suivantes ont été ajoutées :
 
-- problème matériel de Yazid ;
-- incompatibilité locale entre passlib et bcrypt ;
-- erreurs Flake8 W292 ;
-- vulnérabilité ecdsa sans version corrigée disponible ;
-- règle GitHub imposant une approbation externe.
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/users` | Lister les utilisateurs |
+| GET | `/users/{id}` | Consulter un utilisateur |
+| POST | `/users` | Créer un utilisateur |
+| PATCH | `/users/{id}/role` | Modifier un rôle |
+| PATCH | `/users/{id}/status` | Activer ou désactiver un compte |
 
-## 6. Décisions prises
+Ces routes sont réservées au rôle `security_admin`.
 
-- reprise des tâches critiques par Olivier ;
-- ajout d’une exception pip-audit documentée ;
-- correction automatique des fichiers Python sans saut de ligne final ;
-- validation de la PR après réussite de tous les contrôles CI.
+### 3.3 Authentification et RBAC
 
-## 7. État final
+L’authentification repose sur des jetons JWT.
 
-La V5 est considérée comme terminée lorsque :
+Les autorisations sont réparties ainsi :
 
-- les tests sont validés ;
-- les métriques sont exposées ;
-- Grafana affiche les métriques métier ;
-- Docker Compose fonctionne ;
-- la documentation est complète ;
-- les preuves sont enregistrées.
+| Rôle | Autorisations principales |
+|---|---|
+| Employé | Consulter les ressources et créer une demande |
+| Manager | Approuver ou refuser une demande |
+| Administrateur IT | Attribuer ou révoquer un accès |
+| Administrateur sécurité | Administrer les utilisateurs, consulter l’audit et le monitoring |
+
+Les accès non autorisés retournent une réponse `403 Forbidden`.
+
+Un utilisateur désactivé ne peut plus se connecter, même s’il possède le bon mot de passe.
+
+### 3.4 Workflow des accès
+
+Le workflow complet a été validé :
+
+```text
+PENDING_MANAGER
+→ APPROVED ou REJECTED
+→ GRANTED
+→ REVOKED

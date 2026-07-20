@@ -4,9 +4,7 @@
 
 AccessGuard est une application de gestion sécurisée des demandes et des autorisations d’accès dans une entreprise fictive appelée **AsteriaTech**.
 
-Nous avons conçu ce projet pour répondre à un besoin réel en entreprise : contrôler les accès aux ressources sensibles, tracer les décisions, appliquer des rôles clairs et superviser l’état technique de l’application.
-
-L’objectif n’est pas seulement de créer une API ou une interface. Nous avons construit progressivement une plateforme complète, versionnée de **V1 à V5**, avec backend, frontend, base de données, authentification, audit, monitoring, tests automatisés et CI/CD.
+Nous avons conçu ce projet pour contrôler les accès aux ressources sensibles, tracer les décisions, appliquer des rôles clairs et superviser l’état technique de l’application.
 
 ---
 
@@ -45,6 +43,8 @@ L’objectif n’est pas seulement de créer une API ou une interface. Nous avon
 ![Swagger](https://img.shields.io/badge/SWAGGER-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
 
 ---
+
+# Concept du projet
 
 # Concept du projet
 

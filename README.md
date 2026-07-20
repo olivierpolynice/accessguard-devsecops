@@ -1,12 +1,12 @@
 # Projet DevOps - E4 ESTIAM - 2025/2026 - Groupe 22
 
-## AccessGuard — Plateforme DevSecOps de gouvernance des accès
+# AccessGuard — Plateforme DevSecOps de gouvernance des accès
 
-AccessGuard est une application pédagogique conçue pour simuler la gestion sécurisée des accès internes dans une entreprise fictive nommée **AsteriaTech**.
+AccessGuard est une application de gestion sécurisée des demandes et des autorisations d’accès dans une entreprise fictive appelée **AsteriaTech**.
 
-Le projet permet de gérer le cycle complet d’une demande d’accès : création d’une demande par un employé, validation par un manager, attribution par un administrateur IT, révocation d’un accès, audit des actions et supervision technique de l’application.
+Nous avons conçu ce projet pour répondre à un besoin réel en entreprise : contrôler les accès aux ressources sensibles, tracer les décisions, appliquer des rôles clairs et superviser l’état technique de l’application.
 
-Ce projet a été réalisé dans le cadre du projet pédagogique DevOps / DevSecOps ESTIAM 2025/2026.
+L’objectif n’est pas seulement de créer une API ou une interface. Nous avons construit progressivement une plateforme complète, versionnée de **V1 à V5**, avec backend, frontend, base de données, authentification, audit, monitoring, tests automatisés et CI/CD.
 
 ---
 
@@ -21,193 +21,238 @@ Ce projet a été réalisé dans le cadre du projet pédagogique DevOps / DevSec
 
 ---
 
-## Stack technique
+## Stack technique utilisée
 
-![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
-![React](https://img.shields.io/badge/React-Frontend-61DAFB)
-![Vite](https://img.shields.io/badge/Vite-Build-purple)
-![SQLite](https://img.shields.io/badge/SQLite-Database-lightgrey)
-![Docker](https://img.shields.io/badge/Docker-Container-blue)
-![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-orange)
-![Grafana](https://img.shields.io/badge/Grafana-Dashboard-orange)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-black)
-![Pytest](https://img.shields.io/badge/Pytest-Tests-yellow)
-![Flake8](https://img.shields.io/badge/Flake8-Quality-red)
-![Gitleaks](https://img.shields.io/badge/Gitleaks-Secrets_Scan-purple)
+![Python 3.12](https://img.shields.io/badge/PYTHON_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FASTAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/REACT-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/VITE-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLITE-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+
+![Docker](https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/DOCKER_COMPOSE-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![GitHub](https://img.shields.io/badge/GITHUB-181717?style=for-the-badge&logo=github&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GITHUB_ACTIONS-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+
+![Prometheus](https://img.shields.io/badge/PROMETHEUS-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)
+![Grafana](https://img.shields.io/badge/GRAFANA-F46800?style=for-the-badge&logo=grafana&logoColor=white)
+![Pytest](https://img.shields.io/badge/PYTEST-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
+![Flake8](https://img.shields.io/badge/FLAKE8-3776AB?style=for-the-badge&logo=python&logoColor=white)
+
+![Gitleaks](https://img.shields.io/badge/GITLEAKS-8A2BE2?style=for-the-badge&logo=git&logoColor=white)
+![pip-audit](https://img.shields.io/badge/PIP_AUDIT-FFD43B?style=for-the-badge&logo=python&logoColor=black)
+![npm audit](https://img.shields.io/badge/NPM_AUDIT-CB3837?style=for-the-badge&logo=npm&logoColor=white)
+![Swagger](https://img.shields.io/badge/SWAGGER-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
 
 ---
 
 # Concept du projet
 
-AccessGuard répond à un besoin courant dans les entreprises : éviter que les accès sensibles soient attribués sans validation, sans traçabilité ou sans contrôle.
+AccessGuard est une application web DevSecOps dédiée à la gouvernance des accès.
 
-Dans une organisation réelle, un employé ne doit pas pouvoir obtenir directement un accès à un serveur, à un outil d’administration ou à une ressource critique. Une demande doit être créée, validée, attribuée puis auditée.
-
-AccessGuard reproduit ce fonctionnement sous forme d’application web complète.
-
-Le projet couvre :
-
-- une API backend avec FastAPI ;
-- une interface frontend avec React ;
-- une base de données SQLite ;
-- une authentification JWT ;
-- une gestion des rôles ;
-- une journalisation des actions ;
-- des métriques Prometheus ;
-- des tableaux de bord Grafana ;
-- une chaîne CI/CD GitHub Actions ;
-- des tests automatisés ;
-- une logique DevSecOps avec contrôles qualité et sécurité.
-
----
-
-# Contexte initial : de CyberPulse à AccessGuard
-
-Au départ, notre réflexion était orientée autour du projet **CyberPulse**, une idée centrée sur la cybersécurité, l’audit, la surveillance et la sensibilisation aux risques numériques.
-
-CyberPulse nous a permis de poser les premières bases fonctionnelles :
-
-- identification des risques ;
-- réflexion autour de la sécurité ;
-- besoin de supervision ;
-- importance des preuves techniques ;
-- logique d’audit ;
-- sensibilisation aux accès sensibles.
-
-Cependant, au fil de l’analyse, nous avons décidé de recentrer le projet vers une application plus précise, plus démontrable et plus adaptée aux exigences DevOps.
-
-Ce recentrage a donné naissance à **AccessGuard**.
-
-AccessGuard conserve l’esprit cybersécurité de CyberPulse, mais avec un périmètre plus concret : la gouvernance des accès internes.
-
-Ce choix nous a permis de construire progressivement un projet cohérent, testable, versionné, dockerisé et observable.
-
----
-
-# Fonctionnalités principales
-
-| Fonctionnalité | Description |
-|---|---|
-| Authentification | Connexion sécurisée avec JWT |
-| Gestion des rôles | Séparation employee, manager, it_admin, security_admin |
-| Ressources | Liste des ressources internes disponibles |
-| Demandes d’accès | Création d’une demande par un employé |
-| Validation manager | Approbation ou refus d’une demande |
-| Attribution IT | Attribution d’un accès après validation |
-| Révocation | Suppression d’un accès existant |
-| Audit | Journalisation des actions importantes |
-| Utilisateurs | Gestion des comptes et statuts utilisateurs |
-| Monitoring | Exposition des métriques Prometheus |
-| Dashboard | Visualisation technique avec Grafana |
-| CI/CD | Tests et contrôles automatiques avec GitHub Actions |
-
----
-
-# Rôles applicatifs
-
-| Rôle | Description | Accès principal |
-|---|---|---|
-| employee | Employé demandeur | Ressources, demandes d’accès |
-| manager | Responsable de validation | Validation ou refus des demandes |
-| it_admin | Administrateur IT | Attribution et révocation des accès |
-| security_admin | Administrateur sécurité | Audit, utilisateurs, monitoring |
-
----
-
-# Workflow métier
-
-Le fonctionnement principal d’AccessGuard suit le cycle suivant :
+Dans une entreprise, un utilisateur ne devrait pas recevoir un accès sensible sans validation, sans justification ou sans traçabilité. AccessGuard simule ce processus en mettant en place un workflow complet :
 
 ```text
-Employé
-   ↓
-Création d’une demande d’accès
-   ↓
-Manager
-   ↓
-Approbation ou refus
-   ↓
-Administrateur IT
-   ↓
-Attribution ou révocation
-   ↓
-Security Admin
-   ↓
-Audit et supervision
+Demande d’accès → Validation manager → Attribution IT → Révocation → Audit → Monitoring
 
+L’application permet :
+
+aux employés de demander un accès à une ressource ;
+aux managers d’approuver ou de refuser les demandes ;
+aux administrateurs IT d’attribuer ou de révoquer les accès ;
+aux administrateurs sécurité de consulter l’audit, les utilisateurs et le monitoring.
+
+AccessGuard est donc à la fois :
+
+une application métier ;
+une API sécurisée ;
+une interface utilisateur ;
+un projet DevOps ;
+un projet DevSecOps ;
+un support de démonstration technique.
+Contexte initial : de CyberPulse à AccessGuard
+
+Au début du projet, nous avions travaillé sur une première orientation appelée CyberPulse.
+
+CyberPulse était centré sur la cybersécurité, l’audit, la supervision et la sensibilisation aux risques numériques. Cette première réflexion nous a permis d’identifier plusieurs thèmes importants :
+
+la sécurité des accès ;
+la traçabilité ;
+la supervision ;
+la gestion des risques ;
+la nécessité de preuves techniques ;
+la logique DevSecOps.
+
+Cependant, nous avons ensuite décidé de recentrer le projet sur une solution plus concrète, plus démontrable et plus directement exploitable dans un contexte DevOps.
+
+Ce recentrage a donné naissance à AccessGuard.
+
+AccessGuard conserve l’esprit cybersécurité de CyberPulse, mais avec un périmètre plus précis : la gestion des demandes d’accès internes dans une entreprise.
+
+Ce choix nous a permis d’obtenir un projet plus cohérent, plus testable, plus facile à présenter et plus aligné avec les attentes du projet pédagogique.
+
+Fonctionnalités principales
+Fonctionnalité	Description
+Authentification	Connexion sécurisée avec token JWT
+Gestion des rôles	Séparation des droits selon employee, manager, it_admin et security_admin
+Ressources	Consultation des ressources internes disponibles
+Demandes d’accès	Création et suivi des demandes par les employés
+Validation manager	Approbation ou refus d’une demande
+Attribution IT	Attribution d’un accès après validation
+Révocation	Suppression d’un accès existant
+Audit	Journalisation des actions sensibles
+Gestion utilisateurs	Création, modification de rôle, activation et désactivation
+Monitoring	Exposition de métriques Prometheus
+Grafana	Visualisation des métriques techniques
+CI/CD	Tests et contrôles automatiques avec GitHub Actions
+Sécurité	Hash des mots de passe, RBAC, audit, scan de secrets
+Rôles applicatifs
+Rôle	Description	Droits principaux
+employee	Employé demandeur	Créer et consulter ses demandes d’accès
+manager	Responsable hiérarchique	Approuver ou refuser les demandes
+it_admin	Administrateur IT	Attribuer et révoquer les accès
+security_admin	Administrateur sécurité	Gérer les utilisateurs, consulter l’audit et le monitoring
+Workflow métier
+
+Le workflow principal d’AccessGuard repose sur une séparation claire des responsabilités.
+
+1. L’employé consulte les ressources disponibles.
+2. Il crée une demande d’accès.
+3. Le manager analyse la demande.
+4. Le manager approuve ou refuse la demande.
+5. Si la demande est approuvée, l’administrateur IT attribue l’accès.
+6. L’accès peut ensuite être révoqué.
+7. Les actions importantes sont enregistrées dans l’audit.
+8. Les métriques techniques sont exposées pour Prometheus et Grafana.
+
+Cette logique permet d’éviter qu’un accès soit accordé sans contrôle.
+
+Architecture générale
+Frontend React / Vite
+        ↓
+Backend FastAPI
+        ↓
+Base de données SQLite
+        ↓
+Audit logs / Métriques
+        ↓
+Prometheus / Grafana
+        ↓
+GitHub Actions / Tests / Sécurité
+Structure du dépôt
+accessguard-devsecops/
+│
+├── app/
+│   ├── main.py
+│   ├── auth.py
+│   ├── database.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── security.py
+│   ├── metrics.py
+│   └── permissions.py
+│
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+│
+├── tests/
+│   ├── test_auth.py
+│   ├── test_access_requests.py
+│   ├── test_users.py
+│   ├── test_metrics.py
+│   └── test_business_metrics.py
+│
+├── docs/
+│   ├── screenshots/
+│   ├── V5_OBSERVABILITY.md
+│   ├── V5_SPRINT_SUMMARY.md
+│   └── ...
+│
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── README.md
+└── .github/
+    └── workflows/
 Progression du projet
-Version 1 — Socle API et workflow métier
+V1 — Socle API et workflow métier
 
-La V1 a permis de poser les bases du projet.
+La première version a posé les bases du projet.
 
-Nous avons mis en place une première API FastAPI permettant de gérer :
+Nous avons commencé par construire une API FastAPI permettant de représenter le workflow métier principal :
 
-les ressources internes ;
-les demandes d’accès ;
-les décisions manager ;
-les attributions ;
-les révocations ;
-les premiers journaux d’audit.
+ressources internes ;
+demandes d’accès ;
+validation manager ;
+attribution IT ;
+révocation ;
+audit.
 
-Cette version fonctionnait principalement en mémoire, mais elle a permis de valider la logique métier principale.
+Cette V1 a permis de valider la logique centrale du projet avant d’ajouter la sécurité, la persistance et l’interface.
 
 Objectifs de la V1 :
 
-créer un socle backend ;
-définir les entités principales ;
-valider le cycle demande → décision → attribution ;
-préparer les tests ;
+créer un backend fonctionnel ;
+définir les principales entités métier ;
+vérifier le cycle de vie d’une demande ;
+préparer les premiers tests ;
 structurer le projet.
-Version 2 — Authentification et rôles
+V2 — Authentification et RBAC
 
-La V2 a introduit la sécurité applicative.
+La V2 a ajouté la sécurité applicative.
 
-Nous avons ajouté :
+Nous avons intégré :
 
 une route de connexion ;
-la génération de tokens JWT ;
-la vérification des rôles ;
-la protection des routes ;
-les réponses 401 et 403 ;
-les comptes de démonstration.
+des tokens JWT ;
+une gestion des rôles ;
+des permissions selon le profil utilisateur ;
+les erreurs 401 et 403 ;
+la protection des routes sensibles.
 
-Cette version a permis de passer d’une API simple à une API protégée par authentification.
+Cette version a introduit le principe RBAC : Role-Based Access Control.
 
-Les rôles applicatifs ont été structurés autour de quatre profils :
+Les utilisateurs ne peuvent accéder qu’aux fonctionnalités correspondant à leur rôle.
 
-employee
-manager
-it_admin
-security_admin
+Exemples :
 
-Chaque rôle possède des droits différents afin de respecter le principe de séparation des responsabilités.
+un employee peut créer une demande ;
+un manager peut valider ou refuser ;
+un it_admin peut attribuer ou révoquer ;
+un security_admin peut consulter les utilisateurs, l’audit et le monitoring.
+V3 — Persistance et base SQLite
 
-Version 3 — Persistance et structuration
+La V3 a renforcé le projet avec la persistance des données.
 
-La V3 a marqué une étape importante avec l’introduction de la persistance.
+Nous avons utilisé SQLite pour conserver les données de l’application.
 
-Nous avons commencé à structurer les données dans une base SQLite afin de ne plus dépendre uniquement de données temporaires en mémoire.
+Cette étape a permis de ne plus dépendre uniquement de données temporaires en mémoire.
 
-Cette version a permis d’améliorer :
+La V3 a amélioré :
 
-la stabilité des données ;
-la structure backend ;
-la séparation des responsabilités ;
+la stabilité du backend ;
+la conservation des données ;
+la structure des modèles ;
 la fiabilité des tests ;
-la préparation du projet pour Docker et CI/CD.
+la préparation du projet pour Docker.
 
-La V3 a aussi renforcé la logique d’audit, car les actions réalisées dans l’application doivent pouvoir être consultées et conservées.
+Cette version a également permis de mieux organiser les données liées aux demandes, aux ressources, aux accès et aux journaux d’audit.
 
-Version 4 — Interface, Docker et monitoring
+V4 — Frontend, Docker et monitoring
 
 La V4 a transformé AccessGuard en application complète.
 
 Nous avons ajouté une interface frontend avec React et Vite.
 
-Le frontend permet aux utilisateurs de se connecter et d’accéder à des pages différentes selon leur rôle :
+Le frontend permet aux utilisateurs de se connecter et d’accéder à des pages adaptées à leur rôle.
 
-tableau de bord ;
+Pages principales :
+
+login ;
+dashboard ;
 ressources ;
 demandes ;
 validation manager ;
@@ -216,49 +261,50 @@ audit ;
 utilisateurs ;
 monitoring.
 
-La V4 a aussi intégré une logique DevOps plus complète avec :
+Nous avons également intégré Docker et Docker Compose pour faciliter le lancement du projet.
 
-Docker ;
-Docker Compose ;
+La supervision a été ajoutée avec :
+
 Prometheus ;
+endpoint /metrics ;
 Grafana ;
-GitHub Actions ;
-tests automatisés ;
-build frontend.
+vérification de santé avec /health.
 
-Cette version a permis de rendre le projet démontrable de bout en bout.
+Cette version a rendu le projet plus démontrable et plus proche d’une application réelle.
 
-Version 5 — Stabilisation finale et qualité DevSecOps
+V5 — Stabilisation finale, qualité et DevSecOps
 
-La V5 correspond à la phase de professionnalisation du projet.
+La V5 correspond à la phase de consolidation du projet.
 
-Nous avons consolidé l’existant pour obtenir une version plus robuste, plus propre et plus proche d’un projet DevSecOps complet.
+Nous avons stabilisé les fonctionnalités existantes et renforcé la qualité globale.
 
 Travaux réalisés en V5 :
 
-stabilisation du backend ;
 amélioration de la gestion des utilisateurs ;
-renforcement des tests ;
-validation CI/CD ;
+routes utilisateurs ;
+gestion des rôles ;
+activation et désactivation des comptes ;
+sécurité renforcée ;
+tests automatisés ;
+CI/CD GitHub Actions ;
 contrôle qualité Python ;
 build frontend ;
 audit des dépendances ;
-détection de secrets ;
-vérification Docker Compose ;
-protection des fichiers sensibles ;
+scan de secrets ;
+validation Docker Compose ;
 documentation technique ;
-captures de validation.
+captures de démonstration.
 
-La V5 permet de montrer que le projet ne se limite pas à une démonstration fonctionnelle, mais qu’il respecte également une logique de qualité, de sécurité, d’intégration continue et de traçabilité.
+La V5 montre que le projet ne se limite pas à une interface fonctionnelle. Elle montre aussi une démarche DevSecOps avec validation, sécurité, supervision et traçabilité.
 
 Endpoints principaux de l’API
 Authentification
 Endpoint	Méthode	Description
-/auth/login	POST	Connexion utilisateur et génération du JWT
+/auth/login	POST	Connexion utilisateur et génération du token JWT
 Ressources
 Endpoint	Méthode	Description
 /resources	GET	Liste les ressources internes
-/resources/{resource_id}	GET	Détail d’une ressource
+/resources/{resource_id}	GET	Affiche le détail d’une ressource
 Demandes d’accès
 Endpoint	Méthode	Description
 /access-requests	GET	Liste les demandes d’accès
@@ -285,8 +331,11 @@ Comptes de démonstration
 Rôle	Email	Utilisation
 employee	alice.employee@asteriatech.local	Créer des demandes d’accès
 manager	marc.manager@asteriatech.local	Valider ou refuser les demandes
-it_admin	ines.itadmin@asteriatech.local	Attribuer ou révoquer des accès
-security_admin	paul.security@asteriatech.local	Gérer utilisateurs, audit et monitoring
+it_admin	ines.itadmin@asteriatech.local	Attribuer et révoquer les accès
+security_admin	paul.security@asteriatech.local	Gérer les utilisateurs, l’audit et le monitoring
+
+Les mots de passe de démonstration sont définis dans le seed ou la documentation interne du projet.
+
 Installation locale
 1. Cloner le dépôt
 git clone https://github.com/olivierpolynice/accessguard-devsecops.git
@@ -330,43 +379,51 @@ Frontend	http://localhost:8080
 Prometheus	http://localhost:9090
 Grafana	http://localhost:3000
 Metrics API	http://localhost:8000/metrics
-Tests
+Tests et validation
 Lancer les tests backend
 python -m pytest -v
-Lancer Flake8
+
+Résultat de validation observé pendant la stabilisation V5 :
+
+78 passed, 10 skipped, 1 warning
+
+Les tests ignorés concernaient les routes utilisateurs V5 pendant leur phase d’implémentation.
+
+Lancer le contrôle qualité Python
 flake8 app tests
 Vérifier le build frontend
 cd frontend
 npm ci
 npm run build
+Vérifier Docker Compose
+docker compose config
 Qualité et sécurité
 
 Le projet intègre plusieurs contrôles qualité et sécurité.
 
 Contrôle	Objectif
-Pytest	Vérifier le comportement backend
+Pytest	Vérifier le comportement du backend
 Flake8	Contrôler la qualité du code Python
 npm run build	Vérifier la compilation frontend
 pip-audit	Vérifier les vulnérabilités Python
 npm audit	Vérifier les vulnérabilités frontend
 Gitleaks	Détecter les secrets exposés
-Docker Compose config	Vérifier la configuration des services
+Docker Compose config	Vérifier la configuration Docker
 GitHub Actions	Automatiser les validations
 GitHub Actions
 
-La CI/CD vérifie automatiquement le projet lors des pushs et pull requests.
+La CI/CD GitHub Actions permet de vérifier automatiquement le projet.
 
-Contrôles principaux :
+Les contrôles utilisés couvrent :
 
-installation des dépendances ;
-tests backend ;
-lint Python ;
-build frontend ;
-audit de sécurité ;
-scan de secrets ;
-validation Docker Compose.
+les tests backend ;
+le lint Python ;
+la construction du frontend ;
+l’audit des dépendances ;
+la détection de secrets ;
+la validation Docker Compose.
 
-L’objectif est d’éviter qu’une modification instable soit fusionnée dans la branche principale.
+Cette approche limite les risques d’intégrer du code instable dans la branche principale.
 
 Monitoring
 
@@ -376,17 +433,32 @@ http://localhost:8000/metrics
 
 Exemples de métriques suivies :
 
-nombre de connexions réussies ;
-nombre de connexions échouées ;
-nombre de demandes créées ;
-nombre d’approbations ;
-nombre de refus ;
-nombre d’attributions ;
-nombre de révocations ;
-nombre d’actions interdites.
+connexions réussies ;
+connexions échouées ;
+demandes créées ;
+approbations ;
+refus ;
+attributions ;
+révocations ;
+actions interdites.
 
-Prometheus collecte ces métriques et Grafana permet de les visualiser sous forme de tableaux de bord.
+Prometheus collecte ces métriques et Grafana permet de les visualiser.
 
+Sécurité applicative
+
+AccessGuard applique plusieurs règles de sécurité :
+
+authentification obligatoire sur les routes protégées ;
+token JWT ;
+contrôle des rôles ;
+séparation des responsabilités ;
+mots de passe hashés ;
+absence de password_hash dans les réponses API ;
+refus 401 sans token ;
+refus 403 si le rôle est insuffisant ;
+audit des actions sensibles ;
+fichiers .env non versionnés ;
+scan de secrets avec Gitleaks.
 Captures de démonstration
 
 Les captures sont rangées dans :
@@ -407,7 +479,7 @@ Capture	Description
 05_security_admin_users.png	Gestion utilisateurs
 06_user_creation.png	Création utilisateur
 07_user_deactivation_confirmation.png	Désactivation utilisateur
-08_access_revocation_confirmation.png	Révocation accès
+08_access_revocation_confirmation.png	Révocation d’accès
 09_error_403.png	Contrôle RBAC
 10_mobile_responsive.png	Responsive mobile
 11_audit_screen.png	Journal d’audit
@@ -446,24 +518,10 @@ créer un utilisateur ;
 modifier un rôle ;
 activer ou désactiver un compte ;
 consulter les audits ;
-accéder aux pages de monitoring.
-Sécurité applicative
-
-AccessGuard applique plusieurs règles de sécurité :
-
-authentification obligatoire sur les routes protégées ;
-token JWT ;
-contrôle des rôles ;
-refus 401 sans authentification ;
-refus 403 en cas de rôle insuffisant ;
-mots de passe hashés ;
-absence de password_hash dans les réponses API ;
-audit des actions sensibles ;
-fichiers .env ignorés par Git ;
-détection de secrets avec Gitleaks.
+accéder au monitoring.
 Limites actuelles
 
-AccessGuard reste un projet pédagogique. Certaines améliorations peuvent être ajoutées dans une future version :
+AccessGuard reste un projet pédagogique. Certaines améliorations peuvent être ajoutées dans une version future :
 
 déploiement cloud complet ;
 HTTPS avec reverse proxy ;
@@ -472,28 +530,27 @@ tests E2E Playwright ;
 export CSV des audits ;
 alertes Grafana plus avancées ;
 gestion plus fine des permissions ;
-interface d’administration plus complète.
+amélioration de l’interface d’administration.
 Perspectives V6
 
 Une V6 pourrait permettre de poursuivre la professionnalisation du projet avec :
 
 déploiement en ligne ;
-pipeline CI/CD plus avancé ;
 environnement staging ;
 tests end-to-end ;
 durcissement sécurité ;
-alertes Prometheus/Grafana ;
+alertes Prometheus / Grafana ;
 documentation utilisateur complète ;
 préparation finale à la soutenance.
 Conclusion
 
 AccessGuard est le résultat d’un travail progressif mené par le Groupe 22.
 
-Nous sommes partis d’une réflexion initiale autour de CyberPulse, puis nous avons recentré le projet vers une application plus précise et plus démontrable : la gouvernance des accès internes.
+Nous sommes partis d’une première réflexion autour de CyberPulse, puis nous avons recentré le projet vers une application plus précise : la gouvernance des accès internes.
 
-De la V1 à la V5, nous avons construit un projet complet intégrant backend, frontend, base de données, authentification, rôles, audit, monitoring, Docker, tests automatisés et CI/CD.
+De la V1 à la V5, nous avons construit un projet intégrant backend, frontend, base de données, authentification, rôles, audit, monitoring, Docker, tests automatisés et CI/CD.
 
-Cette progression montre notre capacité à organiser un projet DevSecOps, à faire évoluer une application par versions successives et à produire des preuves techniques vérifiables.
+Cette progression montre notre capacité à organiser un projet DevSecOps, à le faire évoluer par versions successives et à produire des preuves techniques vérifiables.
 
 Auteurs
 

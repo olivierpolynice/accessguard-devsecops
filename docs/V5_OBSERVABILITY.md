@@ -1,65 +1,33 @@
-# AccessGuard V5 — Observabilité métier
+# AccessGuard V5 — Observabilité
 
-## Objectif
+## 1. Objectif
 
-La V5 enrichit l’observabilité AccessGuard avec des métriques métier
-liées à l’authentification, aux demandes d’accès, aux décisions manager
-et aux opérations d’administration des droits.
+La V5 renforce l’observabilité d’AccessGuard afin de surveiller le fonctionnement de l’API, les actions métier sensibles et l’état des services techniques.
 
-## Métriques disponibles
+La solution repose sur :
 
-- `accessguard_login_success_total`
-- `accessguard_login_failure_total`
-- `accessguard_access_requests_total`
-- `accessguard_manager_approvals_total`
-- `accessguard_manager_refusals_total`
-- `accessguard_access_grants_total`
-- `accessguard_access_revocations_total`
-- `accessguard_forbidden_actions_total`
+- FastAPI pour l’exposition des métriques ;
+- Prometheus pour la collecte et l’interrogation ;
+- Grafana pour la visualisation ;
+- Docker Compose pour l’orchestration des services ;
+- le journal d’audit pour la traçabilité des actions.
 
-## Endpoint Prometheus
+## 2. Architecture
 
-Les métriques sont exposées à l’adresse :
+Les services d’observabilité sont accessibles aux adresses suivantes :
 
-```text
-GET /metrics
+| Service | Adresse | Utilité |
+|---|---|---|
+| API AccessGuard | http://localhost:8000 | API principale |
+| Santé de l’API | http://localhost:8000/health | Vérification de disponibilité |
+| Métriques | http://localhost:8000/metrics | Exposition des métriques Prometheus |
+| Prometheus | http://localhost:9090 | Collecte et interrogation des métriques |
+| Grafana | http://localhost:3000 | Tableaux de bord |
+| Frontend | http://localhost:5173 | Interface React en développement |
 
-Lancement
-docker compose up --build -d
-docker compose ps
+## 3. Démarrage des services
 
-Services :
+Depuis la racine du projet :
 
-API : http://localhost:8000
-Prometheus : http://localhost:9090
-Grafana : http://localhost:3000
-Dashboard Grafana
-
-Le dashboard exporté est stocké dans :
-
-monitoring/grafana/dashboards/accessguard-v5.json
-Validation
-
-La validation comprend :
-
-vérification de /metrics ;
-requêtes PromQL ;
-affichage Grafana ;
-tests Pytest ;
-validation Docker Compose.
-
----
-
-# LOT 9 — Validation finale
-
-## 22. Lancer les contrôles
-
-```powershell
-python -m pytest -v
-python -m flake8 app tests
-docker compose config --quiet
-docker compose ps
-
-Puis :
-
-git status
+```bash
+docker compose up -d --build
